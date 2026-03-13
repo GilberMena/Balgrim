@@ -1,0 +1,10 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Artefactos temporales locales
+chrome-site/
+chrome-tmp/
+
+# Vercel
+.vercel/
