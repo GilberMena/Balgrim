@@ -8,3 +8,4 @@ chrome-tmp/
 
 # Vercel
 .vercel/
+.vercel
