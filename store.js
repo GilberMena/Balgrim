@@ -89,6 +89,9 @@
   const DEFAULT_SETTINGS = {
     whatsappNumber: "573000000000",
     storeName: "Balgrim",
+    shippingFlatRate: 15000,
+    freeShippingFrom: 280000,
+    supportEmail: "soporte@balgrim.co",
   };
 
   const DEFAULT_CONTENT_BLOCKS = [];
@@ -321,6 +324,17 @@
     }
   };
 
+  const createWompiCheckout = async (payload) => {
+    try {
+      return await apiRequest("/api/payments/wompi/checkout", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   const loginAdmin = async (credentials) => {
     const data = await apiRequest("/api/auth/login", {
       method: "POST",
@@ -540,6 +554,7 @@
     adminUpdateOrder,
     canUseApi,
     createOrder,
+    createWompiCheckout,
     formatCurrency,
     API_BASE_URL,
     getAdminSession,

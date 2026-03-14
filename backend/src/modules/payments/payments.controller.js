@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { createWompiCheckout, processWompiWebhook } from "./payments.service.js";
 
 export async function wompiCheckout(req, res) {
-  const { orderId } = req.body;
+  const { orderId, customer } = req.body;
   if (!orderId) {
     throw new AppError("orderId is required.", 400);
   }
@@ -16,8 +16,8 @@ export async function wompiCheckout(req, res) {
     throw new AppError("Order not found.", 404);
   }
 
-  const checkout = await createWompiCheckout(order);
-  res.json({ checkout });
+  const checkout = await createWompiCheckout(order, customer || {});
+  res.json({ ok: true, checkout });
 }
 
 export async function wompiWebhook(req, res) {

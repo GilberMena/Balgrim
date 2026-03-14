@@ -20,11 +20,17 @@ export async function updateStoreSettings(payload) {
     update: {
       storeName: payload.storeName,
       whatsappNumber: payload.whatsappNumber,
+      shippingFlatRate: payload.shippingFlatRate ?? undefined,
+      freeShippingFrom: payload.freeShippingFrom ?? undefined,
+      supportEmail: payload.supportEmail || null,
     },
     create: {
       id: SETTINGS_ID,
       storeName: payload.storeName,
       whatsappNumber: payload.whatsappNumber,
+      shippingFlatRate: payload.shippingFlatRate ?? 0,
+      freeShippingFrom: payload.freeShippingFrom ?? 0,
+      supportEmail: payload.supportEmail || null,
     },
   });
 }

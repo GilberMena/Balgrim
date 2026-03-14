@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("7d"),
   WOMPI_PUBLIC_KEY: z.string().optional(),
   WOMPI_PRIVATE_KEY: z.string().optional(),
+  WOMPI_INTEGRITY_SECRET: z.string().optional(),
   WOMPI_EVENTS_SECRET: z.string().optional(),
 });
 

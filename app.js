@@ -1,5 +1,6 @@
 ﻿const {
   createOrder,
+  createWompiCheckout,
   formatCurrency,
   getCatalog,
   getContentBlocks,
@@ -124,7 +125,7 @@ const normalizeCartItems = () => {
   saveCart(cart);
 };
 
-const getWhatsappUrl = (customer, orderId) => {
+const getWhatsappUrl = (customer, orderId, checkoutTotals = null) => {
   const lines = cart
     .map((item) => {
       const product = getProduct(item.id);
@@ -147,11 +148,15 @@ const getWhatsappUrl = (customer, orderId) => {
     `Nombre: ${customer.name}`,
     `Celular: ${customer.phone}`,
     `Direccion: ${customer.address}`,
+    customer.city ? `Ciudad: ${customer.city}` : null,
+    customer.email ? `Email: ${customer.email}` : null,
     customer.notes ? `Notas: ${customer.notes}` : null,
     "",
     "Resumen del pedido:",
     ...lines,
-    `Subtotal: ${formatCurrency(getCartTotal())}`,
+    `Subtotal: ${formatCurrency(checkoutTotals?.subtotal ?? getCartTotal())}`,
+    checkoutTotals ? `Envio: ${checkoutTotals.shippingAmount ? formatCurrency(checkoutTotals.shippingAmount) : "Gratis"}` : null,
+    checkoutTotals ? `Total: ${formatCurrency(checkoutTotals.total)}` : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -293,6 +298,95 @@ const drawerMarkup = `
   <div class="cart-toast" aria-live="polite" hidden></div>
 `;
 
+const getShippingProfile = (subtotal, city = "") => {
+  const normalizedCity = String(city || "").trim().toLowerCase();
+  const flatRate = Number(settings.shippingFlatRate || 0);
+  const freeShippingFrom = Number(settings.freeShippingFrom || 0);
+  const qualifiesFreeShipping = freeShippingFrom > 0 && subtotal >= freeShippingFrom;
+  const localCity = normalizedCity.includes("bogota") || normalizedCity.includes("soacha");
+
+  return [
+    {
+      id: "standard",
+      label: localCity ? "Envio estandar" : "Envio nacional",
+      note: qualifiesFreeShipping ? "Gratis por monto" : "Entrega en 2 a 5 dias habiles",
+      amount: qualifiesFreeShipping ? 0 : flatRate,
+    },
+    {
+      id: "express",
+      label: localCity ? "Entrega prioritaria" : "Envio express",
+      note: localCity ? "Mismo dia o siguiente dia habil" : "Prioridad de despacho",
+      amount: qualifiesFreeShipping ? 9000 : flatRate + 9000,
+    },
+    {
+      id: "pickup",
+      label: "Recoger o coordinar",
+      note: "Coordinacion manual por WhatsApp",
+      amount: 0,
+    },
+  ];
+};
+
+const getCheckoutTotals = (city = "", selectedShipping = "standard") => {
+  const subtotal = getCartTotal();
+  const shippingOptions = getShippingProfile(subtotal, city);
+  const selectedOption = shippingOptions.find((option) => option.id === selectedShipping) || shippingOptions[0];
+  const shippingAmount = Number(selectedOption?.amount || 0);
+  return {
+    subtotal,
+    shippingOptions,
+    shippingOption: selectedOption,
+    shippingAmount,
+    total: subtotal + shippingAmount,
+  };
+};
+
+const renderShippingOptionsMarkup = (totals) =>
+  totals.shippingOptions
+    .map(
+      (option) => `
+        <label class="shipping-option${option.id === totals.shippingOption.id ? " is-active" : ""}">
+          <input type="radio" name="shippingOption" value="${option.id}" ${option.id === totals.shippingOption.id ? "checked" : ""}>
+          <span class="shipping-option__copy">
+            <strong>${option.label}</strong>
+            <small>${option.note}</small>
+          </span>
+          <strong>${option.amount ? formatCurrency(option.amount) : "Gratis"}</strong>
+        </label>
+      `
+    )
+    .join("");
+
+const getFloatingWhatsappContent = () => {
+  const pathname = window.location.pathname.toLowerCase();
+  if (pathname.endsWith("checkout.html")) {
+    return {
+      label: "Ayuda con tu pedido",
+      message: `Hola, necesito ayuda con mi checkout en ${settings.storeName}.`,
+    };
+  }
+
+  const slug = new URLSearchParams(window.location.search).get("slug");
+  if (pathname.endsWith("producto.html") && slug) {
+    const product = getProductBySlug(slug);
+    return {
+      label: "Pregunta por esta pieza",
+      message: `Hola, quiero asesoria sobre ${product?.name || "este producto"}.`,
+    };
+  }
+
+  if (pathname.endsWith("hombre.html") || pathname.endsWith("mujer.html") || pathname.endsWith("accesorios.html") || pathname.endsWith("nuevos-lanzamientos.html")) {
+    return {
+      label: "Asesoria de talla",
+      message: `Hola, quiero asesoria para elegir piezas de ${settings.storeName}.`,
+    };
+  }
+
+  return {
+    label: "Habla con Balgrim",
+    message: `Hola, quiero mas informacion sobre ${settings.storeName}.`,
+  };
+};
 const ensureCartUi = () => {
   if (!document.querySelector(".cart-drawer") || !document.querySelector(".product-modal")) {
     document.body.insertAdjacentHTML("beforeend", drawerMarkup);
@@ -302,15 +396,19 @@ const ensureCartUi = () => {
 const ensureFloatingWhatsapp = () => {
   const existing = document.querySelector(".floating-whatsapp");
   if (existing) {
-    existing.setAttribute("href", getWhatsappSupportUrl());
+    const floatingConfig = getFloatingWhatsappContent();
+    existing.setAttribute("href", getWhatsappSupportUrl(floatingConfig.message));
+    const labelNode = existing.querySelector(".floating-whatsapp__label");
+    if (labelNode) labelNode.textContent = floatingConfig.label;
     return;
   }
 
+  const floatingConfig = getFloatingWhatsappContent();
   document.body.insertAdjacentHTML(
     "beforeend",
     `
-      <a class="floating-whatsapp" href="${getWhatsappSupportUrl()}" target="_blank" rel="noopener" aria-label="Hablar por WhatsApp">
-        <span class="floating-whatsapp__label">WhatsApp</span>
+      <a class="floating-whatsapp" href="${getWhatsappSupportUrl(floatingConfig.message)}" target="_blank" rel="noopener" aria-label="Hablar por WhatsApp">
+        <span class="floating-whatsapp__label">${floatingConfig.label}</span>
         <span class="floating-whatsapp__icon">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12.1 3.6C7.5 3.6 3.8 7.3 3.8 11.9C3.8 13.4 4.2 14.8 5 16L3.9 20.1L8.1 19C9.3 19.7 10.6 20 12.1 20C16.7 20 20.4 16.3 20.4 11.8C20.4 7.3 16.7 3.6 12.1 3.6Z"></path>
@@ -820,6 +918,7 @@ const renderCheckoutPage = () => {
     .filter(Boolean);
 
   const cartIssues = getCartIssues();
+  const checkoutTotals = getCheckoutTotals("Bogota", "standard");
 
   root.innerHTML = `
     <section class="checkout-page">
@@ -836,7 +935,7 @@ const renderCheckoutPage = () => {
           <div class="cart-summary cart-summary--page">
             <div class="cart-summary__row">
               <span>Subtotal</span>
-              <strong>${formatCurrency(getCartTotal())}</strong>
+              <strong>${formatCurrency(checkoutTotals.subtotal)}</strong>
             </div>
             ${cartIssues.length ? `<p class="checkout-error">Ajusta las variantes agotadas o cantidades fuera de stock para continuar.</p>` : `<p class="cart-summary__note">Tu pedido queda listo para validacion, pago y confirmacion por WhatsApp.</p>`}
             <form class="checkout-form checkout-form--page" novalidate>
@@ -845,8 +944,16 @@ const renderCheckoutPage = () => {
                 <input type="text" name="name" placeholder="Tu nombre" required>
               </label>
               <label class="checkout-field">
+                <span>Email</span>
+                <input type="email" name="email" placeholder="tu@email.com">
+              </label>
+              <label class="checkout-field">
                 <span>Celular</span>
                 <input type="tel" name="phone" placeholder="300 000 0000" required>
+              </label>
+              <label class="checkout-field">
+                <span>Ciudad</span>
+                <input type="text" name="city" placeholder="Bogota" value="Bogota" required>
               </label>
               <label class="checkout-field">
                 <span>Direccion</span>
@@ -856,10 +963,31 @@ const renderCheckoutPage = () => {
                 <span>Notas adicionales</span>
                 <textarea name="notes" rows="2" placeholder="Opcional"></textarea>
               </label>
+              <div class="checkout-field checkout-field--full">
+                <span>Envio</span>
+                <div class="shipping-options" data-shipping-options>
+                  ${renderShippingOptionsMarkup(checkoutTotals)}
+                </div>
+              </div>
+              <div class="checkout-costs">
+                <div class="checkout-costs__row">
+                  <span>Subtotal prendas</span>
+                  <strong>${formatCurrency(checkoutTotals.subtotal)}</strong>
+                </div>
+                <div class="checkout-costs__row">
+                  <span>Domicilio</span>
+                  <strong data-checkout-shipping-amount>${checkoutTotals.shippingAmount ? formatCurrency(checkoutTotals.shippingAmount) : "Gratis"}</strong>
+                </div>
+                <div class="checkout-costs__row checkout-costs__row--total">
+                  <span>Total</span>
+                  <strong data-checkout-total>${formatCurrency(checkoutTotals.total)}</strong>
+                </div>
+              </div>
               <p class="checkout-error" hidden></p>
               <div class="checkout-actions checkout-actions--page">
                 <button class="button button--ghost" type="button" data-checkout-back-cart>Volver al carrito</button>
-                <button class="button button--add-to-cart button--checkout" type="submit" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pedir por WhatsApp</button>
+                <button class="button button--ghost" type="submit" data-checkout-mode="wompi" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pagar con Wompi</button>
+                <button class="button button--add-to-cart button--checkout" type="submit" data-checkout-mode="whatsapp" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pedir por WhatsApp</button>
               </div>
             </form>
           </div>
@@ -896,6 +1024,21 @@ const renderCheckoutPage = () => {
     if (event.target.closest("[data-checkout-back-cart]")) {
       window.location.href = "index.html#carrito";
     }
+  };
+
+  root.onchange = (event) => {
+    if (!event.target.matches('[name="shippingOption"], [name="city"]')) return;
+    const form = root.querySelector(".checkout-form--page");
+    if (!form) return;
+    const city = String(form.elements.city?.value || "");
+    const shippingOption = String(form.elements.shippingOption?.value || "standard");
+    const totals = getCheckoutTotals(city, shippingOption);
+    const shippingNode = root.querySelector("[data-checkout-shipping-amount]");
+    const totalNode = root.querySelector("[data-checkout-total]");
+    const shippingOptionsNode = root.querySelector("[data-shipping-options]");
+    if (shippingOptionsNode) shippingOptionsNode.innerHTML = renderShippingOptionsMarkup(totals);
+    if (shippingNode) shippingNode.textContent = totals.shippingAmount ? formatCurrency(totals.shippingAmount) : "Gratis";
+    if (totalNode) totalNode.textContent = formatCurrency(totals.total);
   };
 };
 const renderEditorialBlocks = () => {
@@ -1172,20 +1315,35 @@ const enhanceProductCards = () => {
   });
 };
 
-const submitCheckout = async (form) => {
+const submitCheckout = async (form, submitter = null) => {
   const formData = new FormData(form);
+  const checkoutMode = submitter?.dataset.checkoutMode || "whatsapp";
+  const isDedicatedCheckout = form.classList.contains("checkout-form--page");
+  const city = String(formData.get("city") || "").trim();
+  const selectedShipping = String(formData.get("shippingOption") || "standard");
+  const checkoutTotals = isDedicatedCheckout
+    ? getCheckoutTotals(city, selectedShipping)
+    : {
+        subtotal: getCartTotal(),
+        shippingOptions: [],
+        shippingOption: { id: "manual" },
+        shippingAmount: 0,
+        total: getCartTotal(),
+      };
   const customer = {
     name: String(formData.get("name") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
     phone: String(formData.get("phone") || "").trim(),
     address: String(formData.get("address") || "").trim(),
+    city,
     notes: String(formData.get("notes") || "").trim(),
   };
 
-  const errorBox = document.querySelector(".checkout-error");
+  const errorBox = form.querySelector(".checkout-error");
 
-  if (!customer.name || !customer.phone || !customer.address) {
+  if (!customer.name || !customer.phone || !customer.address || (isDedicatedCheckout && !customer.city)) {
     errorBox.hidden = false;
-    errorBox.textContent = "Completa nombre, celular y direccion para continuar.";
+    errorBox.textContent = "Completa nombre, celular, ciudad y direccion para continuar.";
     return;
   }
 
@@ -1220,15 +1378,23 @@ const submitCheckout = async (form) => {
         };
       })
       .filter(Boolean),
-    subtotal: getCartTotal(),
+    subtotal: checkoutTotals.subtotal,
+    shippingOption: checkoutTotals.shippingOption?.id || "standard",
+    shippingAmount: checkoutTotals.shippingAmount,
+    total: checkoutTotals.total,
+    paymentMethod: checkoutMode === "wompi" ? "WOMPI" : "WHATSAPP",
     source: "web",
   };
 
-  const submitButton = form.querySelector(".button--checkout");
-  submitButton.disabled = true;
+  const submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
+  submitButtons.forEach((button) => {
+    button.disabled = true;
+  });
 
   const orderResponse = await createOrder(payload);
-  submitButton.disabled = false;
+  submitButtons.forEach((button) => {
+    button.disabled = false;
+  });
 
   if (!orderResponse.ok && orderResponse.error) {
     errorBox.hidden = false;
@@ -1237,7 +1403,36 @@ const submitCheckout = async (form) => {
   }
 
   const orderId = orderResponse.order ? orderResponse.order.id : "";
-  window.open(getWhatsappUrl(customer, orderId), "_blank", "noopener");
+
+  if (checkoutMode === "wompi") {
+    const wompiResponse = await createWompiCheckout({
+      orderId,
+      customer: {
+        fullName: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        city: customer.city,
+      },
+    });
+
+    if (!wompiResponse.ok && wompiResponse.error) {
+      errorBox.hidden = false;
+      errorBox.textContent = wompiResponse.error;
+      return;
+    }
+
+    if (!wompiResponse.checkout?.available || !wompiResponse.checkout?.checkoutUrl) {
+      errorBox.hidden = false;
+      errorBox.textContent = wompiResponse.checkout?.message || "Wompi no esta configurado todavia.";
+      return;
+    }
+
+    window.location.href = wompiResponse.checkout.checkoutUrl;
+    return;
+  }
+
+  window.open(getWhatsappUrl(customer, orderId, checkoutTotals), "_blank", "noopener");
   showToast(orderId ? `Pedido ${orderId} enviado a WhatsApp.` : "Resumen enviado a WhatsApp.");
 };
 
@@ -1313,7 +1508,7 @@ const bindEvents = () => {
     }
 
     event.preventDefault();
-    submitCheckout(event.target);
+    submitCheckout(event.target, event.submitter || null);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1345,6 +1540,12 @@ const init = async () => {
 };
 
 document.addEventListener("DOMContentLoaded", init);
+
+
+
+
+
+
 
 
 
