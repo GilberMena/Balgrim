@@ -450,6 +450,38 @@ const getStatusTone = (status = "") => {
   return "";
 };
 
+const ORDER_TIMELINE = ["PENDING", "AWAITING_PAYMENT", "PAID", "PREPARING", "SHIPPED", "DELIVERED"];
+
+const getTimelineStepState = (orderStatus, step) => {
+  if (orderStatus === "CANCELLED") {
+    return step === "PENDING" ? "is-complete" : "";
+  }
+
+  const currentIndex = ORDER_TIMELINE.indexOf(orderStatus);
+  const stepIndex = ORDER_TIMELINE.indexOf(step);
+  if (currentIndex === -1 || stepIndex === -1) return "";
+  if (stepIndex < currentIndex) return "is-complete";
+  if (stepIndex === currentIndex) return "is-current";
+  return "";
+};
+
+const renderOrderTimeline = (orderStatus) => `
+  <div class="order-timeline">
+    ${ORDER_TIMELINE.map((step) => `
+      <div class="order-timeline__step ${getTimelineStepState(orderStatus, step)}">
+        <span class="order-timeline__dot"></span>
+        <strong>${getStatusLabel(step)}</strong>
+      </div>
+    `).join("")}
+    ${orderStatus === "CANCELLED" ? `
+      <div class="order-timeline__step is-negative is-current">
+        <span class="order-timeline__dot"></span>
+        <strong>${getStatusLabel("CANCELLED")}</strong>
+      </div>
+    ` : ""}
+  </div>
+`;
+
 const getFloatingWhatsappContent = () => {
   const pathname = window.location.pathname.toLowerCase();
   if (pathname.endsWith("checkout.html")) {
@@ -1243,6 +1275,10 @@ const renderConfirmationPage = async () => {
           <strong>${formatCurrency(order.total || 0)}</strong>
         </article>
       </div>
+      <section class="confirmation-card">
+        <h2>Seguimiento del pedido</h2>
+        ${renderOrderTimeline(order.status)}
+      </section>
       ${shouldRefresh ? `<p class="confirmation-page__intro">Estamos actualizando este estado automaticamente mientras se confirma el pago.</p>` : ""}
       <div class="confirmation-page__grid">
         <section class="confirmation-card">
@@ -1527,35 +1563,59 @@ const enhanceProductCards = () => {
       backImage.classList.add("has-image");
     }
 
-    if (card.classList.contains("product-card") && !card.querySelector(".button--add-to-cart")) {
-      card.insertAdjacentHTML(
-        "beforeend",
-        `
-          <p class="product-card__price">${formatCurrency(product.price)}</p>
-          <div class="product-card__actions">
-            <a class="button button--ghost" href="${getProductUrl(product)}">Ver producto</a>
-            <button class="button button--add-to-cart" type="button" data-add-to-cart="${id}">
-              Agregar al carrito
-            </button>
-          </div>
-        `
-      );
-    }
+    if (card.classList.contains("product-card")) {
+      let priceNode = card.querySelector(".product-card__price");
+      if (!priceNode) {
+        card.insertAdjacentHTML("beforeend", `<p class="product-card__price"></p>`);
+        priceNode = card.querySelector(".product-card__price");
+      }
+      if (priceNode) {
+        priceNode.textContent = formatCurrency(product.price);
+      }
 
-    if (card.classList.contains("catalog-card")) {
-      const body = card.querySelector(".catalog-card__body");
-      if (body && !body.querySelector(".catalog-card__actions")) {
-        body.insertAdjacentHTML(
+      let actionsNode = card.querySelector(".product-card__actions");
+      if (!actionsNode) {
+        card.insertAdjacentHTML(
           "beforeend",
           `
-            <div class="catalog-card__actions">
-              <a class="button button--ghost" href="${getProductUrl(product)}">Ver producto</a>
+            <div class="product-card__actions">
+              <a class="button button--ghost" data-product-link href="${getProductUrl(product)}">Ver producto</a>
               <button class="button button--add-to-cart" type="button" data-add-to-cart="${id}">
                 Agregar al carrito
               </button>
             </div>
           `
         );
+        actionsNode = card.querySelector(".product-card__actions");
+      }
+      const productLink = actionsNode?.querySelector("[data-product-link]");
+      if (productLink) productLink.setAttribute("href", getProductUrl(product));
+      const addToCartButton = actionsNode?.querySelector("[data-add-to-cart]");
+      if (addToCartButton) addToCartButton.setAttribute("data-add-to-cart", id);
+    }
+
+    if (card.classList.contains("catalog-card")) {
+      const body = card.querySelector(".catalog-card__body");
+      if (body) {
+        let actionsNode = body.querySelector(".catalog-card__actions");
+        if (!actionsNode) {
+          body.insertAdjacentHTML(
+            "beforeend",
+            `
+              <div class="catalog-card__actions">
+                <a class="button button--ghost" data-product-link href="${getProductUrl(product)}">Ver producto</a>
+                <button class="button button--add-to-cart" type="button" data-add-to-cart="${id}">
+                  Agregar al carrito
+                </button>
+              </div>
+            `
+          );
+          actionsNode = body.querySelector(".catalog-card__actions");
+        }
+        const productLink = actionsNode?.querySelector("[data-product-link]");
+        if (productLink) productLink.setAttribute("href", getProductUrl(product));
+        const addToCartButton = actionsNode?.querySelector("[data-add-to-cart]");
+        if (addToCartButton) addToCartButton.setAttribute("data-add-to-cart", id);
       }
     }
   });
@@ -1811,6 +1871,12 @@ const init = async () => {
 };
 
 document.addEventListener("DOMContentLoaded", init);
+
+window.addEventListener("pageshow", () => {
+  renderDynamicProductGrids();
+  enhanceProductCards();
+  updateBadges();
+});
 
 
 

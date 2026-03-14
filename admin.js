@@ -6,6 +6,7 @@
 } = window.BalgrimStore;
 
 const ORDER_STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "PREPARING", "SHIPPED", "DELIVERED", "CANCELLED"];
+const ORDER_TIMELINE = ["PENDING", "AWAITING_PAYMENT", "PAID", "PREPARING", "SHIPPED", "DELIVERED"];
 const state = {
   user: null,
   activeView: "dashboard",
@@ -61,6 +62,35 @@ const getStatusTone = (status = "") => {
   if (["PREPARING", "SHIPPED"].includes(status)) return "is-neutral";
   return "";
 };
+
+const getTimelineStepState = (orderStatus, step) => {
+  if (orderStatus === "CANCELLED") {
+    return step === "PENDING" ? "is-complete" : "";
+  }
+  const currentIndex = ORDER_TIMELINE.indexOf(orderStatus);
+  const stepIndex = ORDER_TIMELINE.indexOf(step);
+  if (currentIndex === -1 || stepIndex === -1) return "";
+  if (stepIndex < currentIndex) return "is-complete";
+  if (stepIndex === currentIndex) return "is-current";
+  return "";
+};
+
+const renderOrderTimeline = (orderStatus) => `
+  <div class="order-timeline order-timeline--admin">
+    ${ORDER_TIMELINE.map((step) => `
+      <div class="order-timeline__step ${getTimelineStepState(orderStatus, step)}">
+        <span class="order-timeline__dot"></span>
+        <strong>${step}</strong>
+      </div>
+    `).join("")}
+    ${orderStatus === "CANCELLED" ? `
+      <div class="order-timeline__step is-negative is-current">
+        <span class="order-timeline__dot"></span>
+        <strong>CANCELLED</strong>
+      </div>
+    ` : ""}
+  </div>
+`;
 
 const emptyShippingRule = (index = 0) => ({
   id: `rule-${index + 1}`,
@@ -511,6 +541,7 @@ const renderOrders = () => {
         <span class="status-pill ${getStatusTone(order.status)}">Pedido: ${order.status}</span>
         ${getPrimaryPayment(order) ? `<span class="status-pill ${getStatusTone(getPrimaryPayment(order)?.status)}">Pago: ${getPrimaryPayment(order)?.provider} / ${getPrimaryPayment(order)?.status}</span>` : `<span class="status-pill">Pago: pendiente manual</span>`}
       </div>
+      ${renderOrderTimeline(order.status)}
       <p class="admin-order-card__address">${order.guestAddress || "Sin direccion"}${order.guestCity ? `, ${order.guestCity}` : ""}</p>
       <div class="admin-pill-row">${order.items.map((item) => `<span class="admin-pill">${item.productName} x${item.quantity}</span>`).join("")}</div>
       <form class="admin-order-form" data-order-id="${order.id}"><div class="admin-form-grid admin-form-grid--double"><label class="checkout-field"><span>Estado</span><select name="status">${ORDER_STATUSES.map((status) => `<option value="${status}"${status === order.status ? " selected" : ""}>${status}</option>`).join("")}</select></label><label class="checkout-field admin-field--full"><span>Notas internas</span><textarea name="internalNotes" rows="3" placeholder="Notas de logistica o soporte">${order.internalNotes || ""}</textarea></label></div><p class="admin-feedback" data-order-feedback="${order.id}"></p><button class="button button--add-to-cart" type="submit">Actualizar pedido</button></form>
