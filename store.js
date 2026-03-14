@@ -133,13 +133,34 @@
         return acc;
       }
 
-      const firstVariant = Array.isArray(product.variants) ? product.variants[0] : null;
+      const baseVariant =
+        Array.isArray(product.variants) && product.variants.length
+          ? product.variants[0]
+          : {
+              id: `${product.slug || id}-default`,
+              sku: `${String(product.slug || id).toUpperCase()}-BASE`,
+              size: "UNI",
+              color: "Base",
+              stock: Number(product.stock ?? 10) || 10,
+              imageUrl: "",
+              price: Number(product.price) || 0,
+            };
+      const variants = Array.isArray(product.variants) && product.variants.length
+        ? product.variants.map((variant, index) => ({
+            id: variant.id || `${product.slug || id}-variant-${index + 1}`,
+            sku: variant.sku || `${String(product.slug || id).toUpperCase()}-${index + 1}`,
+            size: variant.size || "UNI",
+            color: variant.color || "Base",
+            stock: Number(variant.stock ?? 0),
+            imageUrl: variant.imageUrl || "",
+            price: Number(variant.price ?? product.price) || 0,
+          }))
+        : [baseVariant];
+      const firstVariant = variants[0] || null;
       const images = Array.isArray(product.images)
         ? product.images.map((image) => (typeof image === "string" ? image : image?.url)).filter(Boolean)
         : [];
-      const variantImages = Array.isArray(product.variants)
-        ? product.variants.map((variant) => variant?.imageUrl).filter(Boolean)
-        : [];
+      const variantImages = variants.map((variant) => variant?.imageUrl).filter(Boolean);
       const categoryName =
         typeof product.category === "string"
           ? product.category
@@ -162,17 +183,7 @@
         images,
         primaryImage,
         secondaryImage,
-        variants: Array.isArray(product.variants)
-          ? product.variants.map((variant) => ({
-              id: variant.id,
-              sku: variant.sku,
-              size: variant.size,
-              color: variant.color,
-              stock: variant.stock,
-              imageUrl: variant.imageUrl || "",
-              price: Number(variant.price) || 0,
-            }))
-          : [],
+        variants,
       };
       return acc;
     }, {});
@@ -180,7 +191,7 @@
 
   const getCatalog = () => {
     const saved = safeParse(localStorage.getItem(KEYS.catalog), null);
-    return saved ? normalizeProducts(saved) : clone(DEFAULT_PRODUCTS);
+    return saved ? normalizeProducts(saved) : normalizeProducts(clone(DEFAULT_PRODUCTS));
   };
 
   const saveCatalog = (catalog) => {
@@ -189,7 +200,7 @@
 
   const resetCatalog = () => {
     localStorage.removeItem(KEYS.catalog);
-    return clone(DEFAULT_PRODUCTS);
+    return normalizeProducts(clone(DEFAULT_PRODUCTS));
   };
 
   const getSettings = () => {
