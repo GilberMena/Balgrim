@@ -10,6 +10,7 @@
   loadCart,
   loadCatalogFromSource,
   loadOrderStatus,
+  lookupOrderStatus,
   loadProductBySlugFromSource,
   loadContentBlocksFromSource,
   loadSettingsFromSource,
@@ -32,6 +33,9 @@ const getProductImage = (product, fallback = "") =>
 
 const getProductHoverImage = (product, fallback = "") =>
   product?.secondaryImage || product?.primaryImage || product?.images?.[1] || fallback;
+
+const renderImageAsset = (url, alt, className) =>
+  url ? `<img class="${className}" src="${url}" alt="${alt}" loading="lazy">` : "";
 
 const getCartCount = () => cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -1218,10 +1222,44 @@ const renderConfirmationPage = async () => {
     root.innerHTML = `
       <section class="confirmation-page">
         <p class="product-page__eyebrow">Pedido</p>
-        <h1>No encontramos tu pedido.</h1>
-        <a class="button button--add-to-cart" href="nuevos-lanzamientos.html">Volver a la tienda</a>
+        <h1>Consulta tu pedido</h1>
+        <p class="confirmation-page__intro">Ingresa tu numero de pedido y el celular usado en la compra para revisar el estado en tiempo real.</p>
+        <form class="confirmation-lookup-form">
+          <label class="checkout-field">
+            <span>Numero de pedido</span>
+            <input type="text" name="orderId" placeholder="cm..." required>
+          </label>
+          <label class="checkout-field">
+            <span>Celular</span>
+            <input type="tel" name="phone" placeholder="300 000 0000" required>
+          </label>
+          <p class="checkout-error" hidden></p>
+          <div class="checkout-actions">
+            <button class="button button--add-to-cart button--checkout" type="submit">Consultar pedido</button>
+            <a class="button button--ghost" href="nuevos-lanzamientos.html">Volver a la tienda</a>
+          </div>
+        </form>
       </section>
     `;
+    root.onsubmit = async (event) => {
+      if (!event.target.matches(".confirmation-lookup-form")) return;
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const errorBox = form.querySelector(".checkout-error");
+      const response = await lookupOrderStatus({
+        orderId: String(formData.get("orderId") || "").trim(),
+        phone: String(formData.get("phone") || "").trim(),
+      });
+      if (!response?.order) {
+        if (errorBox) {
+          errorBox.hidden = false;
+          errorBox.textContent = response?.error || "No pudimos encontrar ese pedido.";
+        }
+        return;
+      }
+      window.location.href = `confirmacion.html?order=${encodeURIComponent(response.order.id)}`;
+    };
     return;
   }
 
@@ -1490,8 +1528,8 @@ const renderDynamicProductGrids = () => {
         (product, index) => `
           <article class="product-card" data-product-id="${product.id}">
             <div class="product-stack">
-              <div class="product-image product-image--0${(index % 3) + 1} product-image--front${getProductImage(product) ? " has-image" : ""}"${getProductImage(product) ? ` style="background-image:url('${getProductImage(product)}')"` : ""}></div>
-              <div class="product-image product-image--0${(index % 3) + 4} product-image--back${getProductHoverImage(product) ? " has-image" : ""}"${getProductHoverImage(product) ? ` style="background-image:url('${getProductHoverImage(product)}')"` : ""}></div>
+              <div class="product-image product-image--0${(index % 3) + 1} product-image--front${getProductImage(product) ? " has-image" : ""}"${getProductImage(product) ? ` style="background-image:url('${getProductImage(product)}')"` : ""}>${renderImageAsset(getProductImage(product), product.name, "product-image__asset")}</div>
+              <div class="product-image product-image--0${(index % 3) + 4} product-image--back${getProductHoverImage(product) ? " has-image" : ""}"${getProductHoverImage(product) ? ` style="background-image:url('${getProductHoverImage(product)}')"` : ""}>${renderImageAsset(getProductHoverImage(product), product.name, "product-image__asset")}</div>
             </div>
             <h3>${product.name}</h3>
           </article>
@@ -1507,7 +1545,7 @@ const renderDynamicProductGrids = () => {
       .map(
         (product, index) => `
           <article class="catalog-card" data-product-id="${product.id}">
-            <div class="catalog-card__media${index % 2 ? " catalog-card__media--dark" : ""}${getProductImage(product) ? " has-image" : ""}"${getProductImage(product) ? ` style="background-image:url('${getProductImage(product)}')"` : ""}></div>
+            <div class="catalog-card__media${index % 2 ? " catalog-card__media--dark" : ""}${getProductImage(product) ? " has-image" : ""}"${getProductImage(product) ? ` style="background-image:url('${getProductImage(product)}')"` : ""}>${renderImageAsset(getProductImage(product), product.name, "catalog-card__asset")}</div>
             <div class="catalog-card__body">
               <h2 class="catalog-card__title">${product.name}</h2>
               <div class="catalog-card__meta">
@@ -1549,18 +1587,33 @@ const enhanceProductCards = () => {
     if (mediaNode && getProductImage(product)) {
       mediaNode.style.backgroundImage = `url('${getProductImage(product)}')`;
       mediaNode.classList.add("has-image");
+      if (!mediaNode.querySelector(".catalog-card__asset")) {
+        mediaNode.insertAdjacentHTML("afterbegin", renderImageAsset(getProductImage(product), product.name, "catalog-card__asset"));
+      } else {
+        mediaNode.querySelector(".catalog-card__asset").setAttribute("src", getProductImage(product));
+      }
     }
 
     const frontImage = card.querySelector(".product-image--front");
     if (frontImage && getProductImage(product)) {
       frontImage.style.backgroundImage = `url('${getProductImage(product)}')`;
       frontImage.classList.add("has-image");
+      if (!frontImage.querySelector(".product-image__asset")) {
+        frontImage.insertAdjacentHTML("afterbegin", renderImageAsset(getProductImage(product), product.name, "product-image__asset"));
+      } else {
+        frontImage.querySelector(".product-image__asset").setAttribute("src", getProductImage(product));
+      }
     }
 
     const backImage = card.querySelector(".product-image--back");
     if (backImage && getProductHoverImage(product)) {
       backImage.style.backgroundImage = `url('${getProductHoverImage(product)}')`;
       backImage.classList.add("has-image");
+      if (!backImage.querySelector(".product-image__asset")) {
+        backImage.insertAdjacentHTML("afterbegin", renderImageAsset(getProductHoverImage(product), product.name, "product-image__asset"));
+      } else {
+        backImage.querySelector(".product-image__asset").setAttribute("src", getProductHoverImage(product));
+      }
     }
 
     if (card.classList.contains("product-card")) {

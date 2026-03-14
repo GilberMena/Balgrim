@@ -344,6 +344,17 @@
     }
   };
 
+  const lookupOrderStatus = async (payload) => {
+    try {
+      return await apiRequest("/api/orders/lookup", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   const createProviderCheckout = async (provider, payload) => {
     try {
       return await apiRequest(`/api/payments/${provider}/checkout`, {
@@ -586,6 +597,7 @@
     createProviderCheckout,
     createWompiCheckout,
     loadOrderStatus,
+    lookupOrderStatus,
     formatCurrency,
     API_BASE_URL,
     getAdminSession,

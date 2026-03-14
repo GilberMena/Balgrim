@@ -33,6 +33,13 @@ export async function getOrderStatus(req, res) {
     return;
   }
 
+  const phone = String(req.query.phone || "").replace(/\D/g, "");
+  const orderPhone = String(order.guestPhone || "").replace(/\D/g, "");
+  if (phone && orderPhone && phone !== orderPhone) {
+    res.status(403).json({ error: "Phone does not match this order." });
+    return;
+  }
+
   res.json({
     order: {
       ...order,
@@ -50,4 +57,18 @@ export async function getOrderStatus(req, res) {
       })),
     },
   });
+}
+
+export async function lookupOrderStatus(req, res) {
+  const orderId = String(req.body?.orderId || "").trim();
+  const phone = String(req.body?.phone || "").replace(/\D/g, "");
+
+  if (!orderId || !phone) {
+    res.status(400).json({ error: "orderId and phone are required." });
+    return;
+  }
+
+  req.params.id = orderId;
+  req.query.phone = phone;
+  return getOrderStatus(req, res);
 }

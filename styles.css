@@ -489,11 +489,23 @@ a {
 }
 
 .product-image {
+  position: relative;
   min-height: 255px;
   margin-bottom: 0;
   box-shadow: none;
   border-radius: 0;
   background-color: transparent;
+  overflow: hidden;
+}
+
+.product-image__asset,
+.catalog-card__asset {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .product-image--01 {
@@ -1111,6 +1123,7 @@ a {
     linear-gradient(180deg, #f0efec 0%, #ece7de 100%);
   background-size: cover;
   background-position: center;
+  overflow: hidden;
 }
 
 .catalog-card__media::before {
@@ -2353,6 +2366,12 @@ body.cart-open .cart-drawer {
   margin: 0;
   color: var(--ink-soft);
   line-height: 1.7;
+}
+
+.confirmation-lookup-form {
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
 }
 
 .confirmation-status-card,
