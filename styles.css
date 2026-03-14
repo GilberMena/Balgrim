@@ -2963,19 +2963,44 @@ body.cart-open .floating-whatsapp {
 
   .cart-summary--drawer {
     padding-top: 14px;
-    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    padding-bottom: calc(42px + env(safe-area-inset-bottom));
+  }
+
+  .cart-summary__shipping-note {
+    margin-bottom: 10px;
   }
 
   .cart-summary__footer-actions {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
   }
 
   .cart-pay-button {
     min-height: 52px;
-    padding: 0 14px;
-    gap: 8px;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
+    padding: 0 12px;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .cart-pay-button span,
+  .cart-pay-button strong {
+    white-space: nowrap;
+  }
+
+  .cart-subtotal {
+    font-size: 0.98rem;
+  }
+
+  .cart-clear {
+    justify-self: end;
+    font-size: 0.76rem;
+    white-space: nowrap;
   }
 
   .product-modal__dialog {
