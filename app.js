@@ -1854,6 +1854,8 @@ const bindEvents = () => {
   document.addEventListener("click", (event) => {
     const addButton = event.target.closest("[data-add-to-cart]");
     if (addButton) {
+      event.preventDefault();
+      event.stopPropagation();
       const product = getProduct(addButton.getAttribute("data-add-to-cart"));
       if (product) rememberProductSlug(product);
       addToCart(addButton.getAttribute("data-add-to-cart"), getFirstAvailableVariant(product)?.id || null);
@@ -1862,6 +1864,7 @@ const bindEvents = () => {
 
     const directProductLink = event.target.closest("[data-product-link]");
     if (directProductLink) {
+      event.stopPropagation();
       const productCard = event.target.closest("[data-product-id]");
       if (productCard) {
         const product = getProduct(productCard.getAttribute("data-product-id"));

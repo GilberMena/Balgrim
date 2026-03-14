@@ -623,6 +623,8 @@ a {
 }
 
 .product-card__actions {
+  position: relative;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -1177,6 +1179,8 @@ a {
 }
 
 .catalog-card__actions {
+  position: relative;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -1185,6 +1189,13 @@ a {
 
 .catalog-card__actions .button--add-to-cart {
   width: 100%;
+}
+
+.product-card__actions .button,
+.catalog-card__actions .button {
+  position: relative;
+  z-index: 4;
+  touch-action: manipulation;
 }
 
 .cart-overlay {
