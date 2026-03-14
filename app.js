@@ -22,11 +22,35 @@ let contentBlocks = getContentBlocks();
 let settings = getSettings();
 let cart = loadCart();
 let confirmationRefreshTimer = null;
+let lastProductSlug = "";
 
 const getProduct = (id) => catalog[id];
 const getCatalogList = () => Object.values(catalog);
 const getProductBySlug = (slug) => getCatalogList().find((product) => product.slug === slug || product.id === slug) || null;
 const getProductUrl = (product) => `producto.html?slug=${encodeURIComponent(product.slug || product.id)}`;
+const productStorageKey = "balgrim:last-product-slug";
+
+const rememberProductSlug = (product) => {
+  const slug = product?.slug || product?.id || "";
+  if (!slug) return;
+  lastProductSlug = slug;
+  try {
+    window.sessionStorage.setItem(productStorageKey, slug);
+  } catch (error) {
+    // Ignore browsers that block storage in private mode.
+  }
+};
+
+const getRememberedProductSlug = () => {
+  if (lastProductSlug) return lastProductSlug;
+  try {
+    const stored = window.sessionStorage.getItem(productStorageKey) || "";
+    if (stored) lastProductSlug = stored;
+    return stored;
+  } catch (error) {
+    return "";
+  }
+};
 
 const getProductImage = (product, fallback = "") =>
   product?.primaryImage || product?.secondaryImage || product?.images?.[0] || fallback;
@@ -177,6 +201,17 @@ const getWhatsappUrl = (customer, orderId, checkoutTotals = null) => {
 
 const getWhatsappSupportUrl = (message = `Hola, quiero mas informacion sobre ${settings.storeName}.`) =>
   `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+const renderProductPageEmptyState = (root, title, ctaLabel = "Volver al catalogo", ctaHref = "nuevos-lanzamientos.html") => {
+  root.innerHTML = `
+    <section class="product-page__empty">
+      <p class="product-page__eyebrow">Balgrim</p>
+      <h1>${title}</h1>
+      <p class="product-page__description">Estamos ajustando la ficha para que se vea limpia y usable tambien desde el celular.</p>
+      <a class="button button--add-to-cart" href="${ctaHref}">${ctaLabel}</a>
+    </section>
+  `;
+};
 
 const footerTemplate = () => `
   <div class="footer__columns">
@@ -854,51 +889,42 @@ const renderProductPage = async () => {
   const root = document.querySelector("[data-product-page-root]");
   if (!root) return;
 
-  const slug = new URLSearchParams(window.location.search).get("slug");
+  const slug = new URLSearchParams(window.location.search).get("slug") || getRememberedProductSlug();
   if (!slug) {
-    root.innerHTML = `
-      <section class="product-page__empty">
-        <p class="product-page__eyebrow">Balgrim</p>
-        <h1>No encontramos este producto.</h1>
-        <a class="button button--add-to-cart" href="nuevos-lanzamientos.html">Volver al catalogo</a>
-      </section>
-    `;
+    renderProductPageEmptyState(root, "No encontramos este producto.");
     return;
   }
 
-  let product = getProductBySlug(slug);
-  if (!product) {
-    product = await loadProductBySlugFromSource(slug);
-    if (product) {
-      catalog = { ...catalog, [product.id]: product };
+  try {
+    let product = getProductBySlug(slug);
+    if (!product) {
+      product = await loadProductBySlugFromSource(slug);
+      if (product) {
+        catalog = { ...catalog, [product.id]: product };
+      }
     }
-  }
 
-  if (!product) {
-    root.innerHTML = `
-      <section class="product-page__empty">
-        <p class="product-page__eyebrow">Balgrim</p>
-        <h1>Este producto ya no esta disponible.</h1>
-        <a class="button button--add-to-cart" href="nuevos-lanzamientos.html">Seguir explorando</a>
-      </section>
-    `;
-    return;
-  }
+    if (!product) {
+      renderProductPageEmptyState(root, "Este producto ya no esta disponible.", "Seguir explorando");
+      return;
+    }
 
-  let selectedImage = getProductImage(product);
-  let selection = resolveVariantSelection(product, getFirstAvailableVariant(product) || getDefaultVariant(product) || {});
+    rememberProductSlug(product);
 
-  const render = () => {
-    const currentVariant = selection.selectedVariant;
-    const gallery = getProductGallery(product, currentVariant);
-    const currentImage = currentVariant?.imageUrl || selectedImage || gallery[0] || getProductImage(product);
-    const relatedProducts = getCatalogList()
-      .filter((item) => item.id !== product.id && item.category === product.category)
-      .slice(0, 3);
+    let selectedImage = getProductImage(product);
+    let selection = resolveVariantSelection(product, getFirstAvailableVariant(product) || getDefaultVariant(product) || {});
 
-    selectedImage = gallery.includes(currentImage) ? currentImage : gallery[0] || currentImage || "";
+    const render = () => {
+      const currentVariant = selection.selectedVariant;
+      const gallery = getProductGallery(product, currentVariant);
+      const currentImage = currentVariant?.imageUrl || selectedImage || gallery[0] || getProductImage(product);
+      const relatedProducts = getCatalogList()
+        .filter((item) => item.id !== product.id && item.category === product.category)
+        .slice(0, 3);
 
-    root.innerHTML = `
+      selectedImage = gallery.includes(currentImage) ? currentImage : gallery[0] || currentImage || "";
+
+      root.innerHTML = `
       <section class="product-page__hero">
         <nav class="product-page__breadcrumbs" aria-label="Ruta de navegacion">
           <a href="index.html">Inicio</a>
@@ -999,46 +1025,51 @@ const renderProductPage = async () => {
           `).join("")}
         </div>
       </section>
-    `;
-  };
+      `;
+    };
 
-  render();
+    render();
 
-  root.onclick = (event) => {
-    const thumb = event.target.closest("[data-product-page-thumb]");
-    if (thumb) {
-      selectedImage = thumb.dataset.productPageThumb;
-      render();
-      return;
-    }
+    root.onclick = (event) => {
+      const thumb = event.target.closest("[data-product-page-thumb]");
+      if (thumb) {
+        selectedImage = thumb.dataset.productPageThumb;
+        render();
+        return;
+      }
 
-    const sizeButton = event.target.closest("[data-product-page-size]");
-    if (sizeButton) {
-      selection = resolveVariantSelection(product, {
-        size: sizeButton.dataset.productPageSize,
-        color: selection.selectedColor,
-      });
-      selectedImage = selection.selectedVariant?.imageUrl || getProductImage(product);
-      render();
-      return;
-    }
+      const sizeButton = event.target.closest("[data-product-page-size]");
+      if (sizeButton) {
+        selection = resolveVariantSelection(product, {
+          size: sizeButton.dataset.productPageSize,
+          color: selection.selectedColor,
+        });
+        selectedImage = selection.selectedVariant?.imageUrl || getProductImage(product);
+        render();
+        return;
+      }
 
-    const colorButton = event.target.closest("[data-product-page-color]");
-    if (colorButton) {
-      selection = resolveVariantSelection(product, {
-        size: selection.selectedSize,
-        color: colorButton.dataset.productPageColor,
-      });
-      selectedImage = selection.selectedVariant?.imageUrl || getProductImage(product);
-      render();
-      return;
-    }
+      const colorButton = event.target.closest("[data-product-page-color]");
+      if (colorButton) {
+        selection = resolveVariantSelection(product, {
+          size: selection.selectedSize,
+          color: colorButton.dataset.productPageColor,
+        });
+        selectedImage = selection.selectedVariant?.imageUrl || getProductImage(product);
+        render();
+        return;
+      }
 
-    const addButton = event.target.closest("[data-product-page-add]");
-    if (addButton && selection.selectedVariant) {
-      addToCart(product.id, selection.selectedVariant.id);
-    }
-  };
+      const addButton = event.target.closest("[data-product-page-add]");
+      if (addButton && selection.selectedVariant) {
+        rememberProductSlug(product);
+        addToCart(product.id, selection.selectedVariant.id);
+      }
+    };
+  } catch (error) {
+    console.error("No se pudo renderizar el producto", error);
+    renderProductPageEmptyState(root, "No pudimos cargar esta ficha en tu celular.", "Volver al inicio", "index.html");
+  }
 };
 
 const renderCheckoutPage = () => {
@@ -1824,8 +1855,18 @@ const bindEvents = () => {
     const addButton = event.target.closest("[data-add-to-cart]");
     if (addButton) {
       const product = getProduct(addButton.getAttribute("data-add-to-cart"));
+      if (product) rememberProductSlug(product);
       addToCart(addButton.getAttribute("data-add-to-cart"), getFirstAvailableVariant(product)?.id || null);
       return;
+    }
+
+    const directProductLink = event.target.closest("[data-product-link]");
+    if (directProductLink) {
+      const productCard = event.target.closest("[data-product-id]");
+      if (productCard) {
+        const product = getProduct(productCard.getAttribute("data-product-id"));
+        if (product) rememberProductSlug(product);
+      }
     }
 
     const productCard = event.target.closest("[data-product-id]");
@@ -1837,6 +1878,7 @@ const bindEvents = () => {
     ) {
       const product = getProduct(productCard.getAttribute("data-product-id"));
       if (product) {
+        rememberProductSlug(product);
         window.location.href = getProductUrl(product);
       }
       return;
@@ -1929,6 +1971,7 @@ window.addEventListener("pageshow", () => {
   renderDynamicProductGrids();
   enhanceProductCards();
   updateBadges();
+  renderProductPage();
 });
 
 
