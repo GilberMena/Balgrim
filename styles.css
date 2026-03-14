@@ -833,49 +833,104 @@ a {
 
 @media (max-width: 720px) {
   .page-shell {
-    width: min(100% - 20px, 1220px);
+    width: min(100% - 16px, 1220px);
+    padding-top: 8px;
   }
 
   .topbar {
-    flex-wrap: wrap;
-    padding: 22px 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px 12px;
+    padding: 18px 16px 16px;
   }
 
   .nav {
-    justify-content: flex-start;
-    gap: 14px;
     order: 3;
-    width: 100%;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 10px;
+    width: calc(100% + 2px);
+    margin: 0 -1px;
+    overflow-x: auto;
+    padding: 4px 1px 0;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav a {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    font-size: 0.76rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .brand {
+    font-size: clamp(1.9rem, 9vw, 2.8rem);
+  }
+
+  .toolbar {
+    gap: 8px;
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-button svg {
+    width: 24px;
+    height: 24px;
   }
 
   .hero {
-    min-height: 620px;
+    min-height: 70svh;
   }
 
   .hero-copy {
-    width: calc(100% - 36px);
-    padding: 160px 0 88px;
+    width: calc(100% - 24px);
+    padding: 140px 0 72px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.98;
   }
 
   .manifesto {
-    padding: 56px 24px 72px;
+    padding: 48px 18px 62px;
+  }
+
+  .products {
+    padding: 32px 16px 12px;
   }
 
   .footer {
-    padding: 36px 24px 32px;
+    padding: 30px 18px 26px;
   }
 
   .footer::after {
     right: 14px;
     bottom: -6px;
+    font-size: clamp(2.6rem, 17vw, 4.8rem);
   }
 
   .button--hero {
-    margin-top: 48px;
+    width: 100%;
+    margin-top: 32px;
   }
 
   .manifesto p {
     text-align: left;
+    font-size: clamp(1.18rem, 5.3vw, 1.42rem);
   }
 }
 
@@ -3576,13 +3631,21 @@ body.cart-open .floating-whatsapp {
     padding: 18px;
   }
 
+  .checkout-page__head .button {
+    width: 100%;
+    margin-top: 0;
+  }
+
   .checkout-item {
     grid-template-columns: 1fr;
     justify-items: start;
+    gap: 10px;
+    padding: 12px;
   }
 
   .checkout-item__meta {
     justify-items: start;
+    gap: 2px;
   }
 
   .product-page-main {
@@ -3604,6 +3667,8 @@ body.cart-open .floating-whatsapp {
 
   .checkout-payment-option {
     grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    padding: 14px 12px;
   }
 
   .checkout-payment-option__badges {
@@ -3726,10 +3791,11 @@ body.cart-open .floating-whatsapp {
 
   .footer__columns {
     grid-template-columns: 1fr;
+    gap: 22px;
   }
 
   .footer__visual {
-    min-height: 180px;
+    min-height: 150px;
   }
 
   .footer__figure {
@@ -3737,9 +3803,18 @@ body.cart-open .floating-whatsapp {
     height: 100%;
   }
 
+  .footer__signature {
+    gap: 18px;
+  }
+
+  .footer-logo--hero {
+    font-size: clamp(2.8rem, 17vw, 5rem);
+    letter-spacing: 0.04em;
+  }
+
   .floating-whatsapp {
     right: 14px;
-    bottom: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
   }
 
   .floating-whatsapp__label {
@@ -3760,6 +3835,7 @@ body.cart-open .floating-whatsapp {
 
   .product-card {
     text-align: left;
+    padding: 0;
   }
 
   .product-stack {
@@ -3809,5 +3885,69 @@ body.cart-open .floating-whatsapp {
 
   .admin-cropper__controls {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .topbar {
+    padding: 16px 14px 14px;
+  }
+
+  .brand {
+    font-size: 2.2rem;
+  }
+
+  .hero {
+    min-height: 66svh;
+  }
+
+  .hero-copy {
+    width: calc(100% - 20px);
+    padding: 124px 0 58px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.2rem, 12vw, 3.2rem);
+  }
+
+  .button,
+  .button--hero {
+    min-height: 50px;
+    padding: 0 18px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+
+  .subpage-main,
+  .product-page-main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .product-page__thumbs {
+    grid-template-columns: repeat(4, minmax(64px, 1fr));
+  }
+
+  .product-page__thumb {
+    min-width: 64px;
+  }
+
+  .checkout-page__head,
+  .checkout-page__panel,
+  .product-page__hero,
+  .product-page__related,
+  .cart-drawer__header,
+  .cart-drawer__content,
+  .cart-summary--drawer {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .footer {
+    padding: 26px 14px 22px;
+  }
+
+  .footer-logo--hero {
+    font-size: clamp(2.6rem, 19vw, 4.5rem);
   }
 }
