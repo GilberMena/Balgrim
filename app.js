@@ -1851,7 +1851,17 @@ const submitCheckout = async (form, submitter = null) => {
 };
 
 const bindEvents = () => {
-  document.addEventListener("click", (event) => {
+  let lastTouchHandledAt = 0;
+
+  const handleInteraction = (event) => {
+    if (event.type === "click" && Date.now() - lastTouchHandledAt < 700) {
+      return;
+    }
+
+    if (event.type === "touchend") {
+      lastTouchHandledAt = Date.now();
+    }
+
     const addButton = event.target.closest("[data-add-to-cart]");
     if (addButton) {
       event.preventDefault();
@@ -1889,6 +1899,7 @@ const bindEvents = () => {
 
     if (event.target.closest(".icon-button--cart")) {
       event.preventDefault();
+      event.stopPropagation();
       openCart();
       return;
     }
@@ -1928,7 +1939,10 @@ const bindEvents = () => {
     if (action === "remove") {
       updateQuantity(productId, variantId, 0);
     }
-  });
+  };
+
+  document.addEventListener("click", handleInteraction);
+  document.addEventListener("touchend", handleInteraction, { passive: false });
 
   document.addEventListener("submit", (event) => {
     if (!event.target.matches(".checkout-form")) {
