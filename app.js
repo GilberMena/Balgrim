@@ -23,6 +23,7 @@ let settings = getSettings();
 let cart = loadCart();
 let confirmationRefreshTimer = null;
 let lastProductSlug = "";
+let lastCheckoutSubmitter = null;
 
 const getProduct = (id) => catalog[id];
 const getCatalogList = () => Object.values(catalog);
@@ -1734,6 +1735,11 @@ const submitCheckout = async (form, submitter = null) => {
   };
 
   const errorBox = form.querySelector(".checkout-error");
+  const submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
+  const activeSubmitter = submitter && submitButtons.includes(submitter) ? submitter : submitButtons[submitButtons.length - 1] || null;
+
+  errorBox.hidden = true;
+  errorBox.textContent = "";
 
   if (!customer.name || !customer.phone || !customer.address || (isDedicatedCheckout && (!customer.city || !customer.department))) {
     errorBox.hidden = false;
@@ -1780,15 +1786,24 @@ const submitCheckout = async (form, submitter = null) => {
     source: "web",
   };
 
-  const submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
   submitButtons.forEach((button) => {
+    button.dataset.originalLabel = button.dataset.originalLabel || button.textContent.trim();
     button.disabled = true;
   });
+  if (activeSubmitter) {
+    activeSubmitter.textContent = checkoutMode === "WHATSAPP" ? "Abriendo WhatsApp..." : "Procesando...";
+  }
+  form.classList.add("is-submitting");
 
   const orderResponse = await createOrder(payload);
   submitButtons.forEach((button) => {
     button.disabled = false;
+    if (button.dataset.originalLabel) {
+      button.textContent = button.dataset.originalLabel;
+    }
   });
+  form.classList.remove("is-submitting");
+  lastCheckoutSubmitter = null;
 
   if (!orderResponse.ok && orderResponse.error) {
     errorBox.hidden = false;
@@ -1860,6 +1875,11 @@ const bindEvents = () => {
 
     if (event.type === "touchend") {
       lastTouchHandledAt = Date.now();
+    }
+
+    const checkoutSubmitButton = event.target.closest('.checkout-form button[type="submit"]');
+    if (checkoutSubmitButton) {
+      lastCheckoutSubmitter = checkoutSubmitButton;
     }
 
     const addButton = event.target.closest("[data-add-to-cart]");
@@ -1950,7 +1970,7 @@ const bindEvents = () => {
     }
 
     event.preventDefault();
-    submitCheckout(event.target, event.submitter || null);
+    submitCheckout(event.target, event.submitter || lastCheckoutSubmitter || null);
   });
 
   document.addEventListener("keydown", (event) => {

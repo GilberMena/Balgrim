@@ -2541,6 +2541,14 @@ body.cart-open .cart-drawer {
   width: 100%;
 }
 
+.checkout-form.is-submitting {
+  opacity: 0.88;
+}
+
+.checkout-form.is-submitting .button[type="submit"] {
+  cursor: wait;
+}
+
 .floating-whatsapp {
   position: fixed;
   right: 22px;
