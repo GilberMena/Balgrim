@@ -117,3 +117,95 @@ export async function processWompiWebhook(payload) {
     payload,
   };
 }
+
+const buildHostedCheckout = async ({
+  provider,
+  providerRef,
+  configuredUrl,
+  unavailableMessage,
+  order,
+  customer = {},
+  persistPayment = true,
+}) => {
+  if (persistPayment) {
+    await prisma.payment.upsert({
+      where: { providerRef },
+      update: {
+        amount: order.total,
+        status: "PENDING",
+        rawPayload: {
+          source: `${provider.toLowerCase()}_checkout_request`,
+          customer,
+        },
+      },
+      create: {
+        orderId: order.id,
+        provider,
+        providerRef,
+        amount: order.total,
+        status: "PENDING",
+        rawPayload: {
+          source: `${provider.toLowerCase()}_checkout_request`,
+          customer,
+        },
+      },
+    });
+  }
+
+  const baseCheckout = {
+    provider,
+    orderId: order.id,
+    amount: Number(order.total),
+    currency: "COP",
+    reference: providerRef,
+    available: Boolean(configuredUrl),
+  };
+
+  if (!configuredUrl) {
+    return {
+      ...baseCheckout,
+      message: unavailableMessage,
+    };
+  }
+
+  const params = new URLSearchParams({
+    orderId: order.id,
+    reference: providerRef,
+    amount: String(order.total),
+    currency: "COP",
+  });
+
+  if (customer.email) params.set("email", customer.email);
+  if (customer.fullName) params.set("name", customer.fullName);
+  if (customer.phone) params.set("phone", customer.phone);
+
+  return {
+    ...baseCheckout,
+    checkoutUrl: `${configuredUrl}${configuredUrl.includes("?") ? "&" : "?"}${params.toString()}`,
+  };
+};
+
+export async function createMercadoPagoCheckout(order, customer = {}) {
+  return buildHostedCheckout({
+    provider: "MERCADOPAGO",
+    providerRef: `MP-${order.id}`,
+    configuredUrl: env.MERCADOPAGO_CHECKOUT_URL,
+    unavailableMessage:
+      "Mercado Pago aun no esta configurado con un checkout real en el backend.",
+    order,
+    customer,
+  });
+}
+
+export async function createAddiCheckout(order, customer = {}) {
+  return buildHostedCheckout({
+    provider: "ADDI",
+    providerRef: `ADDI-${order.id}`,
+    configuredUrl: env.ADDI_CHECKOUT_URL,
+    unavailableMessage:
+      "Addi aun no esta configurado con un checkout real en el backend.",
+    order,
+    customer,
+    persistPayment: false,
+  });
+}

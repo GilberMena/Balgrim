@@ -32,6 +32,6 @@ export const legacyOrderSchema = z.object({
   shippingOption: z.string().optional(),
   shippingAmount: z.number().min(0).optional(),
   total: z.number().positive().optional(),
-  paymentMethod: z.enum(["WHATSAPP", "WOMPI"]).optional(),
+  paymentMethod: z.enum(["WHATSAPP", "WOMPI", "MERCADOPAGO", "ADDI"]).optional(),
   source: z.string().optional(),
 });

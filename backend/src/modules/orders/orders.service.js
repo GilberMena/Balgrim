@@ -80,6 +80,7 @@ export async function createLegacyOrder(payload, userId = null) {
   const subtotal = Number(payload.subtotal || 0);
   const total = Number(payload.total || subtotal + shippingAmount);
   const paymentMethod = payload.paymentMethod || "WHATSAPP";
+  const awaitingOnlinePayment = ["WOMPI", "MERCADOPAGO", "ADDI"].includes(paymentMethod);
 
   const order = await prisma.order.create({
     data: {
@@ -93,7 +94,7 @@ export async function createLegacyOrder(payload, userId = null) {
       subtotal,
       shippingAmount,
       total,
-      status: paymentMethod === "WOMPI" ? "AWAITING_PAYMENT" : "PENDING",
+      status: awaitingOnlinePayment ? "AWAITING_PAYMENT" : "PENDING",
       items: {
         create: payload.items.map((item) => ({
           productVariantId: item.variantId || null,

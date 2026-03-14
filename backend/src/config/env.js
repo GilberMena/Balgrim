@@ -14,6 +14,8 @@ const envSchema = z.object({
   WOMPI_PRIVATE_KEY: z.string().optional(),
   WOMPI_INTEGRITY_SECRET: z.string().optional(),
   WOMPI_EVENTS_SECRET: z.string().optional(),
+  MERCADOPAGO_CHECKOUT_URL: z.string().optional(),
+  ADDI_CHECKOUT_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

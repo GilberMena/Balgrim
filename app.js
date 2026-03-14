@@ -1,4 +1,6 @@
 ﻿const {
+  createAddiCheckout,
+  createMercadoPagoCheckout,
   createOrder,
   createWompiCheckout,
   formatCurrency,
@@ -226,44 +228,25 @@ const drawerMarkup = `
   <aside class="cart-drawer" aria-hidden="true" aria-label="Carrito de compras">
     <div class="cart-drawer__header">
       <div>
-        <p class="cart-drawer__eyebrow">Balgrim</p>
-        <h2>Tu carrito</h2>
+        <p class="cart-drawer__eyebrow">Carrito</p>
+        <h2>Carrito</h2>
       </div>
       <button class="cart-close" type="button" aria-label="Cerrar carrito">x</button>
     </div>
     <div class="cart-drawer__content">
+      <div class="cart-promo" data-cart-promo></div>
       <div class="cart-items"></div>
-      <div class="cart-summary">
-        <div class="cart-summary__row">
-          <span>Subtotal</span>
+    </div>
+    <div class="cart-summary cart-summary--drawer">
+      <p class="cart-summary__shipping-note">Los gastos de envio se calculan en la pantalla de pago</p>
+      <div class="cart-summary__footer-actions">
+        <button class="cart-clear" type="button">Vaciar carrito</button>
+        <a class="cart-pay-button" href="checkout.html">
+          <span>Pagar</span>
           <strong class="cart-subtotal">$0</strong>
-        </div>
-        <p class="cart-summary__note">Checkout invitado con respaldo de pedido y cierre por WhatsApp.</p>
-        <form class="checkout-form" novalidate>
-          <label class="checkout-field">
-            <span>Nombre completo</span>
-            <input type="text" name="name" placeholder="Tu nombre" required>
-          </label>
-          <label class="checkout-field">
-            <span>Celular</span>
-            <input type="tel" name="phone" placeholder="300 000 0000" required>
-          </label>
-          <label class="checkout-field">
-            <span>Direccion</span>
-            <textarea name="address" rows="3" placeholder="Barrio, direccion y referencias" required></textarea>
-          </label>
-          <label class="checkout-field">
-            <span>Notas adicionales</span>
-            <textarea name="notes" rows="2" placeholder="Opcional"></textarea>
-          </label>
-          <p class="checkout-error" hidden></p>
-          <div class="checkout-actions">
-            <a class="button button--ghost button--checkout-link" href="checkout.html">Ir al checkout</a>
-            <button class="button button--add-to-cart cart-clear" type="button">Vaciar carrito</button>
-            <button class="button button--add-to-cart button--checkout" type="submit">Pedir por WhatsApp</button>
-          </div>
-        </form>
+        </a>
       </div>
+      <p class="checkout-error" hidden></p>
     </div>
   </aside>
   <div class="product-modal" hidden aria-hidden="true">
@@ -341,6 +324,18 @@ const getCheckoutTotals = (city = "", selectedShipping = "standard") => {
   };
 };
 
+const getCartPromoState = () => {
+  const threshold = 500000;
+  const hasWomenItem = cart.some((item) => getProduct(item.id)?.category === "Mujer");
+  const subtotal = getCartTotal();
+  return {
+    threshold,
+    hasWomenItem,
+    subtotal,
+    qualifies: subtotal >= threshold && hasWomenItem,
+  };
+};
+
 const renderShippingOptionsMarkup = (totals) =>
   totals.shippingOptions
     .map(
@@ -356,6 +351,47 @@ const renderShippingOptionsMarkup = (totals) =>
       `
     )
     .join("");
+
+const PAYMENT_METHODS = [
+  {
+    id: "WOMPI",
+    heading: "PSE, Bancolombia, Nequi, Puntos Colombia.",
+    description: "Se te redirigira a Wompi para completar la compra con tus medios locales.",
+    badges: ["PSE", "Bancolombia", "Nequi", "+2"],
+  },
+  {
+    id: "MERCADOPAGO",
+    heading: "Mercado Pago | Tarjetas de Credito, Debito, Efecty.",
+    description: "Paga con tarjetas y metodos locales desde un checkout de Mercado Pago.",
+    badges: ["Mastercard", "Maestro", "Visa", "+2"],
+  },
+  {
+    id: "ADDI",
+    heading: "Addi | Compra ahora, paga despues. Pago a credito.",
+    description: "Financia la compra en cuotas desde un checkout de Addi.",
+    badges: ["Addi"],
+  },
+];
+
+const getPaymentMethodCopy = (methodId = "WOMPI") =>
+  PAYMENT_METHODS.find((method) => method.id === methodId) || PAYMENT_METHODS[0];
+
+const renderPaymentOptionsMarkup = (selectedMethod = "WOMPI") =>
+  PAYMENT_METHODS.map(
+    (method) => `
+      <label class="checkout-payment-option${method.id === selectedMethod ? " is-active" : ""}">
+        <input type="radio" name="paymentMethod" value="${method.id}" ${method.id === selectedMethod ? "checked" : ""}>
+        <span class="checkout-payment-option__indicator" aria-hidden="true"></span>
+        <span class="checkout-payment-option__body">
+          <strong>${method.heading}</strong>
+          <small>${method.description}</small>
+        </span>
+        <span class="checkout-payment-option__badges">
+          ${method.badges.map((badge) => `<span>${badge}</span>`).join("")}
+        </span>
+      </label>
+    `
+  ).join("");
 
 const getFloatingWhatsappContent = () => {
   const pathname = window.location.pathname.toLowerCase();
@@ -539,28 +575,40 @@ const updateQuantity = (id, variantId, nextQuantity) => {
 
 const renderCart = () => {
   const container = document.querySelector(".cart-items");
+  const promoBox = document.querySelector("[data-cart-promo]");
   const subtotal = document.querySelector(".cart-subtotal");
   const clearButton = document.querySelector(".cart-clear");
-  const submitButton = document.querySelector(".button--checkout");
+  const payButton = document.querySelector(".cart-pay-button");
   const errorBox = document.querySelector(".checkout-error");
 
-  if (!container || !subtotal || !clearButton || !submitButton || !errorBox) {
+  if (!container || !promoBox || !subtotal || !clearButton || !payButton || !errorBox) {
     return;
   }
 
   errorBox.hidden = true;
   errorBox.textContent = "";
+  const promo = getCartPromoState();
+  promoBox.className = `cart-promo${promo.qualifies ? " is-qualified" : ""}`;
+  promoBox.innerHTML = `
+    <p>
+      Por compra minima de <strong>${formatCurrency(promo.threshold)}</strong> que incluya items de
+      <span>mujer</span> lleva <span>panoleta Balgrim</span> de regalo.
+    </p>
+    <small>${promo.qualifies ? "Tu carrito ya activa este beneficio." : "Se activa automaticamente cuando cumples la condicion."}</small>
+  `;
 
   if (!cart.length) {
     container.innerHTML = `
       <div class="cart-empty">
         <p>Tu carrito esta vacio.</p>
-        <span>Agrega productos desde cualquier coleccion y el resumen quedara listo para checkout invitado.</span>
+        <span>Agrega productos desde cualquier coleccion y el resumen quedara listo para pasar a pago.</span>
       </div>
     `;
     subtotal.textContent = formatCurrency(0);
     clearButton.disabled = true;
-    submitButton.disabled = true;
+    payButton.classList.add("is-disabled");
+    payButton.setAttribute("aria-disabled", "true");
+    payButton.setAttribute("href", "#");
     return;
   }
 
@@ -584,22 +632,22 @@ const renderCart = () => {
             ${itemImage ? `<img src="${itemImage}" alt="${product.name}">` : product.name.charAt(0)}
           </div>
           <div class="cart-item__copy">
-            <p class="cart-item__category">${product.category}</p>
+            <p class="cart-item__category">${String(settings.storeName || "Balgrim").toUpperCase()}.CO</p>
             <h3>${product.name}</h3>
-            <span>${getVariantLabel(variant)} · ${product.note}</span>
-            <p class="cart-item__unit">Unidad: ${formatCurrency(variant.price)}</p>
-            ${issue ? `<p class="cart-item__status">${issue.type === "out_of_stock" ? "Esta variante esta agotada." : "Tu cantidad supera el stock disponible."}</p>` : `<p class="cart-item__status is-success">${getVariantStockMessage(variant)}</p>`}
-          </div>
-          <div class="cart-item__meta">
-            <strong>${formatCurrency(variant.price * quantity)}</strong>
-            <div class="cart-item__qty" aria-label="Cantidad de ${product.name}">
-              <button type="button" data-cart-action="decrease" data-product-id="${id}" data-variant-id="${variant.id}">-</button>
-              <span>${quantity}</span>
-              <button type="button" ${isMaxed || !isVariantInStock(variant) ? "disabled" : ""} data-cart-action="increase" data-product-id="${id}" data-variant-id="${variant.id}">+</button>
+            <p class="cart-item__price">${formatCurrency(variant.price)}</p>
+            <p class="cart-item__variant">${variant.size || "UNI"}</p>
+            ${product.note ? `<p class="cart-item__detail">${product.note}</p>` : ""}
+            ${issue ? `<p class="cart-item__status">${issue.type === "out_of_stock" ? "Esta variante esta agotada." : "Tu cantidad supera el stock disponible."}</p>` : ""}
+            <div class="cart-item__actions">
+              <div class="cart-item__qty" aria-label="Cantidad de ${product.name}">
+                <button type="button" data-cart-action="decrease" data-product-id="${id}" data-variant-id="${variant.id}">-</button>
+                <span>${quantity}</span>
+                <button type="button" ${isMaxed || !isVariantInStock(variant) ? "disabled" : ""} data-cart-action="increase" data-product-id="${id}" data-variant-id="${variant.id}">+</button>
+              </div>
+              <button class="cart-item__remove" type="button" data-cart-action="remove" data-product-id="${id}" data-variant-id="${variant.id}">
+                Quitar
+              </button>
             </div>
-            <button class="cart-item__remove" type="button" data-cart-action="remove" data-product-id="${id}" data-variant-id="${variant.id}">
-              Eliminar
-            </button>
           </div>
         </article>
       `;
@@ -608,11 +656,13 @@ const renderCart = () => {
 
   subtotal.textContent = formatCurrency(getCartTotal());
   clearButton.disabled = false;
-  submitButton.disabled = cartIssues.length > 0;
+  payButton.classList.toggle("is-disabled", !!cartIssues.length);
+  payButton.setAttribute("aria-disabled", cartIssues.length ? "true" : "false");
+  payButton.setAttribute("href", cartIssues.length ? "#" : "checkout.html");
 
   if (cartIssues.length) {
     errorBox.hidden = false;
-    errorBox.textContent = "Ajusta los productos agotados o cantidades fuera de stock antes de continuar.";
+    errorBox.textContent = "Ajusta los productos agotados o las cantidades fuera de stock antes de continuar.";
   }
 };
 
@@ -919,14 +969,16 @@ const renderCheckoutPage = () => {
 
   const cartIssues = getCartIssues();
   const checkoutTotals = getCheckoutTotals("Bogota", "standard");
+  const selectedPayment = "WOMPI";
+  const selectedPaymentCopy = getPaymentMethodCopy(selectedPayment);
 
   root.innerHTML = `
     <section class="checkout-page">
       <div class="checkout-page__head">
         <div>
-          <p class="product-page__eyebrow">Checkout</p>
+          <p class="product-page__eyebrow">Pago</p>
           <h1>Finaliza tu pedido</h1>
-          <p class="checkout-page__intro">Completa tus datos, revisa el resumen y deja el pedido listo para cierre manual o paso a pago.</p>
+          <p class="checkout-page__intro">Todas las transacciones son seguras y estan encriptadas.</p>
         </div>
         <a class="button button--ghost" href="nuevos-lanzamientos.html">Seguir comprando</a>
       </div>
@@ -937,7 +989,7 @@ const renderCheckoutPage = () => {
               <span>Subtotal</span>
               <strong>${formatCurrency(checkoutTotals.subtotal)}</strong>
             </div>
-            ${cartIssues.length ? `<p class="checkout-error">Ajusta las variantes agotadas o cantidades fuera de stock para continuar.</p>` : `<p class="cart-summary__note">Tu pedido queda listo para validacion, pago y confirmacion por WhatsApp.</p>`}
+            ${cartIssues.length ? `<p class="checkout-error">Ajusta las variantes agotadas o cantidades fuera de stock para continuar.</p>` : `<p class="cart-summary__note">Tu pedido queda listo para validacion, pago y confirmacion.</p>`}
             <form class="checkout-form checkout-form--page" novalidate>
               <label class="checkout-field">
                 <span>Nombre completo</span>
@@ -969,6 +1021,19 @@ const renderCheckoutPage = () => {
                   ${renderShippingOptionsMarkup(checkoutTotals)}
                 </div>
               </div>
+              <div class="checkout-field checkout-field--full">
+                <span>Pago</span>
+                <div class="checkout-payment-options" data-payment-options>
+                  ${renderPaymentOptionsMarkup(selectedPayment)}
+                </div>
+              </div>
+              <div class="checkout-payment-security">
+                <div class="checkout-payment-security__icon">SSL</div>
+                <div>
+                  <strong>PAGOS ONLINE 100% SEGUROS</strong>
+                  <p>Procesamos tus pagos con tecnologia de encriptacion certificada, brindandote una experiencia segura y confiable en cada compra.</p>
+                </div>
+              </div>
               <div class="checkout-costs">
                 <div class="checkout-costs__row">
                   <span>Subtotal prendas</span>
@@ -983,11 +1048,12 @@ const renderCheckoutPage = () => {
                   <strong data-checkout-total>${formatCurrency(checkoutTotals.total)}</strong>
                 </div>
               </div>
+              <p class="checkout-payment-copy" data-checkout-payment-copy>${selectedPaymentCopy.description}</p>
               <p class="checkout-error" hidden></p>
               <div class="checkout-actions checkout-actions--page">
                 <button class="button button--ghost" type="button" data-checkout-back-cart>Volver al carrito</button>
-                <button class="button button--ghost" type="submit" data-checkout-mode="wompi" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pagar con Wompi</button>
-                <button class="button button--add-to-cart button--checkout" type="submit" data-checkout-mode="whatsapp" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pedir por WhatsApp</button>
+                <button class="button button--ghost" type="submit" data-checkout-mode="whatsapp" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pedir por WhatsApp</button>
+                <button class="button button--add-to-cart button--checkout" type="submit" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Continuar al pago</button>
               </div>
             </form>
           </div>
@@ -1027,16 +1093,21 @@ const renderCheckoutPage = () => {
   };
 
   root.onchange = (event) => {
-    if (!event.target.matches('[name="shippingOption"], [name="city"]')) return;
+    if (!event.target.matches('[name="shippingOption"], [name="city"], [name="paymentMethod"]')) return;
     const form = root.querySelector(".checkout-form--page");
     if (!form) return;
     const city = String(form.elements.city?.value || "");
     const shippingOption = String(form.elements.shippingOption?.value || "standard");
+    const paymentMethod = String(form.elements.paymentMethod?.value || "WOMPI").toUpperCase();
     const totals = getCheckoutTotals(city, shippingOption);
     const shippingNode = root.querySelector("[data-checkout-shipping-amount]");
     const totalNode = root.querySelector("[data-checkout-total]");
     const shippingOptionsNode = root.querySelector("[data-shipping-options]");
+    const paymentOptionsNode = root.querySelector("[data-payment-options]");
+    const paymentCopyNode = root.querySelector("[data-checkout-payment-copy]");
     if (shippingOptionsNode) shippingOptionsNode.innerHTML = renderShippingOptionsMarkup(totals);
+    if (paymentOptionsNode) paymentOptionsNode.innerHTML = renderPaymentOptionsMarkup(paymentMethod);
+    if (paymentCopyNode) paymentCopyNode.textContent = getPaymentMethodCopy(paymentMethod).description;
     if (shippingNode) shippingNode.textContent = totals.shippingAmount ? formatCurrency(totals.shippingAmount) : "Gratis";
     if (totalNode) totalNode.textContent = formatCurrency(totals.total);
   };
@@ -1317,7 +1388,9 @@ const enhanceProductCards = () => {
 
 const submitCheckout = async (form, submitter = null) => {
   const formData = new FormData(form);
-  const checkoutMode = submitter?.dataset.checkoutMode || "whatsapp";
+  const selectedPaymentMethod = String(formData.get("paymentMethod") || "WOMPI").toUpperCase();
+  const checkoutMode =
+    submitter?.dataset.checkoutMode === "whatsapp" ? "WHATSAPP" : selectedPaymentMethod;
   const isDedicatedCheckout = form.classList.contains("checkout-form--page");
   const city = String(formData.get("city") || "").trim();
   const selectedShipping = String(formData.get("shippingOption") || "standard");
@@ -1382,7 +1455,7 @@ const submitCheckout = async (form, submitter = null) => {
     shippingOption: checkoutTotals.shippingOption?.id || "standard",
     shippingAmount: checkoutTotals.shippingAmount,
     total: checkoutTotals.total,
-    paymentMethod: checkoutMode === "wompi" ? "WOMPI" : "WHATSAPP",
+    paymentMethod: checkoutMode,
     source: "web",
   };
 
@@ -1404,36 +1477,52 @@ const submitCheckout = async (form, submitter = null) => {
 
   const orderId = orderResponse.order ? orderResponse.order.id : "";
 
-  if (checkoutMode === "wompi") {
-    const wompiResponse = await createWompiCheckout({
-      orderId,
-      customer: {
-        fullName: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        city: customer.city,
-      },
-    });
-
-    if (!wompiResponse.ok && wompiResponse.error) {
-      errorBox.hidden = false;
-      errorBox.textContent = wompiResponse.error;
-      return;
-    }
-
-    if (!wompiResponse.checkout?.available || !wompiResponse.checkout?.checkoutUrl) {
-      errorBox.hidden = false;
-      errorBox.textContent = wompiResponse.checkout?.message || "Wompi no esta configurado todavia.";
-      return;
-    }
-
-    window.location.href = wompiResponse.checkout.checkoutUrl;
+  if (checkoutMode === "WHATSAPP") {
+    window.open(getWhatsappUrl(customer, orderId, checkoutTotals), "_blank", "noopener");
+    showToast(orderId ? `Pedido ${orderId} enviado a WhatsApp.` : "Resumen enviado a WhatsApp.");
     return;
   }
 
-  window.open(getWhatsappUrl(customer, orderId, checkoutTotals), "_blank", "noopener");
-  showToast(orderId ? `Pedido ${orderId} enviado a WhatsApp.` : "Resumen enviado a WhatsApp.");
+  const checkoutPayload = {
+    orderId,
+    customer: {
+      fullName: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+    },
+  };
+
+  const providerRequest =
+    checkoutMode === "MERCADOPAGO"
+      ? createMercadoPagoCheckout(checkoutPayload)
+      : checkoutMode === "ADDI"
+        ? createAddiCheckout(checkoutPayload)
+        : createWompiCheckout(checkoutPayload);
+
+  const providerResponse = await providerRequest;
+
+  if (!providerResponse.ok && providerResponse.error) {
+    errorBox.hidden = false;
+    errorBox.textContent = providerResponse.error;
+    return;
+  }
+
+  if (!providerResponse.checkout?.available || !providerResponse.checkout?.checkoutUrl) {
+    const fallbackMessage =
+      checkoutMode === "MERCADOPAGO"
+        ? "Mercado Pago no esta configurado todavia."
+        : checkoutMode === "ADDI"
+          ? "Addi no esta configurado todavia."
+          : "Wompi no esta configurado todavia.";
+
+    errorBox.hidden = false;
+    errorBox.textContent = providerResponse.checkout?.message || fallbackMessage;
+    return;
+  }
+
+  window.location.href = providerResponse.checkout.checkoutUrl;
 };
 
 const bindEvents = () => {

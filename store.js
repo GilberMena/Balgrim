@@ -335,9 +335,9 @@
     }
   };
 
-  const createWompiCheckout = async (payload) => {
+  const createProviderCheckout = async (provider, payload) => {
     try {
-      return await apiRequest("/api/payments/wompi/checkout", {
+      return await apiRequest(`/api/payments/${provider}/checkout`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -345,6 +345,13 @@
       return { ok: false, error: error.message };
     }
   };
+
+  const createWompiCheckout = async (payload) => createProviderCheckout("wompi", payload);
+
+  const createMercadoPagoCheckout = async (payload) =>
+    createProviderCheckout("mercadopago", payload);
+
+  const createAddiCheckout = async (payload) => createProviderCheckout("addi", payload);
 
   const loginAdmin = async (credentials) => {
     const data = await apiRequest("/api/auth/login", {
@@ -564,7 +571,10 @@
     adminUploadImage,
     adminUpdateOrder,
     canUseApi,
+    createAddiCheckout,
+    createMercadoPagoCheckout,
     createOrder,
+    createProviderCheckout,
     createWompiCheckout,
     formatCurrency,
     API_BASE_URL,
