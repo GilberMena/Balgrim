@@ -13,6 +13,7 @@ const state = {
   products: [], orders: [], customers: [],
   inventory: { variants: [], adjustments: [] },
   coupons: [], contentBlocks: [], settings: {}, auditLogs: [],
+  orderFilters: { query: "", status: "ALL", payment: "ALL" },
   selectedProductId: null, selectedCouponId: null, selectedContentId: null, draftProduct: null,
 };
 
@@ -60,6 +61,15 @@ const getStatusTone = (status = "") => {
   if (["PREPARING", "SHIPPED"].includes(status)) return "is-neutral";
   return "";
 };
+
+const emptyShippingRule = (index = 0) => ({
+  id: `rule-${index + 1}`,
+  label: "",
+  department: "",
+  city: "",
+  price: 0,
+  eta: "",
+});
 
 const emptyVariant = () => ({ id: "", sku: "", size: "M", color: "Negro", stock: 0, price: 0, compareAtPrice: "", imageUrl: "" });
 const emptyProduct = () => ({ id: "", name: "", category: "Nuevos lanzamientos", description: "", active: true, featured: false, images: [], variants: [emptyVariant()] });
@@ -434,10 +444,67 @@ const renderProducts = () => {
   renderVariantList(product);
 };
 
+const renderShippingRulesEditor = (rules = []) => {
+  const container = document.querySelector("[data-shipping-rules-list]");
+  if (!container) return;
+  const normalizedRules = Array.isArray(rules) && rules.length ? rules : [emptyShippingRule(0)];
+  container.innerHTML = normalizedRules
+    .map(
+      (rule, index) => `
+        <div class="admin-shipping-rule" data-shipping-rule-index="${index}">
+          <div class="admin-form-grid admin-form-grid--double">
+            <label class="checkout-field"><span>Etiqueta</span><input type="text" name="shipping-rule-label-${index}" value="${rule.label || ""}" placeholder="Bogota express"></label>
+            <label class="checkout-field"><span>Departamento</span><input type="text" name="shipping-rule-department-${index}" value="${rule.department || ""}" placeholder="Cundinamarca"></label>
+            <label class="checkout-field"><span>Ciudad</span><input type="text" name="shipping-rule-city-${index}" value="${rule.city || ""}" placeholder="Bogota"></label>
+            <label class="checkout-field"><span>Precio</span><input type="number" name="shipping-rule-price-${index}" value="${Number(rule.price || 0)}" min="0" step="1000"></label>
+            <label class="checkout-field admin-field--full"><span>ETA</span><input type="text" name="shipping-rule-eta-${index}" value="${rule.eta || ""}" placeholder="Mismo dia o 2 a 4 dias habiles"></label>
+          </div>
+          <button class="admin-link-button" type="button" data-remove-shipping-rule="${index}">Eliminar tarifa</button>
+        </div>
+      `
+    )
+    .join("");
+};
+
+const collectShippingRulesFromEditor = () => {
+  const rows = Array.from(document.querySelectorAll("[data-shipping-rule-index]"));
+  return rows
+    .map((row, index) => ({
+      id: `rule-${index + 1}`,
+      label: String(row.querySelector(`[name="shipping-rule-label-${index}"]`)?.value || "").trim(),
+      department: String(row.querySelector(`[name="shipping-rule-department-${index}"]`)?.value || "").trim(),
+      city: String(row.querySelector(`[name="shipping-rule-city-${index}"]`)?.value || "").trim(),
+      price: Number(row.querySelector(`[name="shipping-rule-price-${index}"]`)?.value || 0),
+      eta: String(row.querySelector(`[name="shipping-rule-eta-${index}"]`)?.value || "").trim(),
+    }))
+    .filter((rule) => rule.label);
+};
+
 const renderOrders = () => {
   const container = document.querySelector("[data-orders-list]");
+  const queryInput = document.querySelector("[data-order-filter-query]");
+  const statusSelect = document.querySelector("[data-order-filter-status]");
+  const paymentSelect = document.querySelector("[data-order-filter-payment]");
   if (!container) return;
-  container.innerHTML = state.orders.length ? state.orders.map((order) => `
+  if (queryInput) queryInput.value = state.orderFilters.query;
+  if (statusSelect) statusSelect.value = state.orderFilters.status;
+  if (paymentSelect) paymentSelect.value = state.orderFilters.payment;
+  const filteredOrders = state.orders.filter((order) => {
+    const payment = getPrimaryPayment(order);
+    const query = state.orderFilters.query.trim().toLowerCase();
+    const matchesQuery =
+      !query ||
+      [order.id, order.guestName, order.guestPhone, order.guestCity]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    const matchesStatus = state.orderFilters.status === "ALL" || order.status === state.orderFilters.status;
+    const paymentStatus = payment?.status || "NONE";
+    const matchesPayment =
+      state.orderFilters.payment === "ALL" || paymentStatus === state.orderFilters.payment;
+    return matchesQuery && matchesStatus && matchesPayment;
+  });
+
+  container.innerHTML = filteredOrders.length ? filteredOrders.map((order) => `
     <article class="admin-order-card">
       <div class="admin-order-card__head"><div><p class="admin-order-card__eyebrow">${order.id}</p><h3>${order.guestName || "Cliente invitado"}</h3><span>${order.guestPhone || "Sin telefono"}</span></div><div class="admin-order-card__amounts"><strong>${formatCurrency(order.total || 0)}</strong><span>${formatDate(order.createdAt)}</span></div></div>
       <div class="admin-pill-row">
@@ -447,7 +514,7 @@ const renderOrders = () => {
       <p class="admin-order-card__address">${order.guestAddress || "Sin direccion"}${order.guestCity ? `, ${order.guestCity}` : ""}</p>
       <div class="admin-pill-row">${order.items.map((item) => `<span class="admin-pill">${item.productName} x${item.quantity}</span>`).join("")}</div>
       <form class="admin-order-form" data-order-id="${order.id}"><div class="admin-form-grid admin-form-grid--double"><label class="checkout-field"><span>Estado</span><select name="status">${ORDER_STATUSES.map((status) => `<option value="${status}"${status === order.status ? " selected" : ""}>${status}</option>`).join("")}</select></label><label class="checkout-field admin-field--full"><span>Notas internas</span><textarea name="internalNotes" rows="3" placeholder="Notas de logistica o soporte">${order.internalNotes || ""}</textarea></label></div><p class="admin-feedback" data-order-feedback="${order.id}"></p><button class="button button--add-to-cart" type="submit">Actualizar pedido</button></form>
-    </article>`).join("") : `<p class="admin-empty">Aun no hay pedidos registrados.</p>`;
+    </article>`).join("") : `<p class="admin-empty">No hay pedidos que coincidan con los filtros actuales.</p>`;
 };
 const renderCustomers = () => {
   const tbody = document.querySelector("[data-customers-table]");
@@ -532,7 +599,7 @@ const renderSettings = () => {
   form.elements.supportEmail.value = state.settings.supportEmail || "";
   form.elements.shippingFlatRate.value = state.settings.shippingFlatRate || 0;
   form.elements.freeShippingFrom.value = state.settings.freeShippingFrom || 0;
-  form.elements.shippingRules.value = formatShippingRulesText(state.settings.shippingRules || []);
+  renderShippingRulesEditor(state.settings.shippingRules || []);
 };
 
 const renderAudit = () => {
@@ -759,6 +826,18 @@ const removeVariantImage = async (index) => {
 };
 const bindEvents = () => {
   document.addEventListener("change", async (event) => {
+    if (event.target.matches("[data-order-filter-status]")) {
+      state.orderFilters.status = String(event.target.value || "ALL");
+      renderOrders();
+      return;
+    }
+
+    if (event.target.matches("[data-order-filter-payment]")) {
+      state.orderFilters.payment = String(event.target.value || "ALL");
+      renderOrders();
+      return;
+    }
+
     if (event.target.matches('input[name="productImageFiles"]')) {
       await uploadProductImages(event.target);
       return;
@@ -775,6 +854,12 @@ const bindEvents = () => {
   });
 
   document.addEventListener("input", (event) => {
+    if (event.target.matches("[data-order-filter-query]")) {
+      state.orderFilters.query = String(event.target.value || "");
+      renderOrders();
+      return;
+    }
+
     if (event.target.matches("[data-crop-zoom]")) {
       cropperSession.zoom = Number(event.target.value) / 100;
       renderCropperPreview();
@@ -874,6 +959,21 @@ const bindEvents = () => {
     const viewJump = event.target.closest("[data-admin-view-jump]");
     if (viewJump) return setView(viewJump.dataset.adminViewJump);
     if (event.target.closest("[data-admin-logout]")) { logoutAdmin(); state.user = null; return renderAuth(); }
+    if (event.target.closest("[data-add-shipping-rule]")) {
+      const nextRules = [...(Array.isArray(state.settings.shippingRules) ? state.settings.shippingRules : []), emptyShippingRule((state.settings.shippingRules || []).length)];
+      state.settings.shippingRules = nextRules;
+      renderShippingRulesEditor(nextRules);
+      return;
+    }
+    const removeShippingRule = event.target.closest("[data-remove-shipping-rule]");
+    if (removeShippingRule) {
+      const index = Number(removeShippingRule.dataset.removeShippingRule);
+      const rules = [...(Array.isArray(state.settings.shippingRules) ? state.settings.shippingRules : [])];
+      rules.splice(index, 1);
+      state.settings.shippingRules = rules.length ? rules : [emptyShippingRule(0)];
+      renderShippingRulesEditor(state.settings.shippingRules);
+      return;
+    }
 
     const removeProductImageButton = event.target.closest("[data-remove-product-image]");
     if (removeProductImageButton) {
@@ -991,9 +1091,10 @@ const bindEvents = () => {
     if (event.target.matches(".settings-form")) {
       event.preventDefault();
       const formData = new FormData(event.target);
-      try { await adminSaveStoreSettings({ id: state.settings.id, storeName: String(formData.get("storeName") || "").trim(), whatsappNumber: String(formData.get("whatsappNumber") || "").trim(), supportEmail: String(formData.get("supportEmail") || "").trim(), shippingFlatRate: Number(formData.get("shippingFlatRate") || 0), freeShippingFrom: Number(formData.get("freeShippingFrom") || 0), shippingRules: parseShippingRulesText(String(formData.get("shippingRules") || "")) }); await refreshAdminData(); writeFeedback("[data-settings-feedback]", "Configuracion guardada."); } catch (error) { writeFeedback("[data-settings-feedback]", error.message, true); }
+      try { await adminSaveStoreSettings({ id: state.settings.id, storeName: String(formData.get("storeName") || "").trim(), whatsappNumber: String(formData.get("whatsappNumber") || "").trim(), supportEmail: String(formData.get("supportEmail") || "").trim(), shippingFlatRate: Number(formData.get("shippingFlatRate") || 0), freeShippingFrom: Number(formData.get("freeShippingFrom") || 0), shippingRules: collectShippingRulesFromEditor() }); await refreshAdminData(); writeFeedback("[data-settings-feedback]", "Configuracion guardada."); } catch (error) { writeFeedback("[data-settings-feedback]", error.message, true); }
     }
   });
+
 };
 
 const initAdmin = async () => {

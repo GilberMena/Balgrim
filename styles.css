@@ -2567,6 +2567,23 @@ body.cart-open .cart-drawer {
   line-height: 1.6;
 }
 
+.admin-filter-bar,
+.admin-shipping-rules {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-filter-bar {
+  grid-template-columns: 1.2fr 1fr 1fr;
+  margin-bottom: 18px;
+}
+
+.admin-shipping-rule {
+  padding: 18px;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  background: #fbfaf8;
+}
+
 .admin-hero {
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
@@ -2824,6 +2841,10 @@ body.cart-open .cart-drawer {
   .admin-inline-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-filter-bar {
+    grid-template-columns: 1fr;
   }
 }
 .admin-topline {

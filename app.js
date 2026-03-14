@@ -20,6 +20,7 @@ let catalog = getCatalog();
 let contentBlocks = getContentBlocks();
 let settings = getSettings();
 let cart = loadCart();
+let confirmationRefreshTimer = null;
 
 const getProduct = (id) => catalog[id];
 const getCatalogList = () => Object.values(catalog);
@@ -1177,6 +1178,7 @@ const renderCheckoutPage = () => {
 const renderConfirmationPage = async () => {
   const root = document.querySelector("[data-confirmation-page-root]");
   if (!root) return;
+  clearTimeout(confirmationRefreshTimer);
 
   const params = new URLSearchParams(window.location.search);
   const orderId = params.get("order");
@@ -1213,6 +1215,9 @@ const renderConfirmationPage = async () => {
 
   const { order } = response;
   const latestPayment = Array.isArray(order.payments) && order.payments.length ? order.payments[0] : null;
+  const shouldRefresh =
+    ["PENDING", "AWAITING_PAYMENT", "PREPARING"].includes(order.status) ||
+    ["PENDING"].includes(latestPayment?.status || "");
 
   root.innerHTML = `
     <section class="confirmation-page">
@@ -1238,6 +1243,7 @@ const renderConfirmationPage = async () => {
           <strong>${formatCurrency(order.total || 0)}</strong>
         </article>
       </div>
+      ${shouldRefresh ? `<p class="confirmation-page__intro">Estamos actualizando este estado automaticamente mientras se confirma el pago.</p>` : ""}
       <div class="confirmation-page__grid">
         <section class="confirmation-card">
           <h2>Datos de entrega</h2>
@@ -1273,6 +1279,12 @@ const renderConfirmationPage = async () => {
       </section>
     </section>
   `;
+
+  if (shouldRefresh) {
+    confirmationRefreshTimer = setTimeout(() => {
+      renderConfirmationPage();
+    }, 7000);
+  }
 };
 
 const renderEditorialBlocks = () => {
