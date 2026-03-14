@@ -2250,6 +2250,117 @@ body.cart-open .cart-drawer {
   line-height: 1.6;
 }
 
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.08);
+  color: #111;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-pill.is-positive {
+  background: rgba(97, 154, 96, 0.14);
+  color: #2f6b2f;
+}
+
+.status-pill.is-negative {
+  background: rgba(174, 61, 61, 0.14);
+  color: #9d2d2d;
+}
+
+.status-pill.is-neutral {
+  background: rgba(91, 116, 154, 0.14);
+  color: #34527b;
+}
+
+.confirmation-page {
+  display: grid;
+  gap: 24px;
+}
+
+.confirmation-page__head,
+.confirmation-page__status-row,
+.confirmation-page__grid {
+  display: grid;
+  gap: 18px;
+}
+
+.confirmation-page__status-row,
+.confirmation-page__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.confirmation-page__grid {
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.confirmation-page__intro {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.confirmation-status-card,
+.confirmation-card {
+  padding: 22px;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  background: #fbfaf8;
+}
+
+.confirmation-status-card {
+  display: grid;
+  gap: 10px;
+}
+
+.confirmation-status-card span {
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.confirmation-card h2,
+.confirmation-card p {
+  margin-top: 0;
+}
+
+.confirmation-summary-row,
+.confirmation-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.confirmation-summary-row + .confirmation-summary-row,
+.confirmation-item + .confirmation-item {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(10, 10, 10, 0.08);
+}
+
+.confirmation-summary-row--total {
+  font-size: 1.02rem;
+}
+
+.confirmation-item p,
+.confirmation-item span {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+}
+
+.confirmation-item__meta {
+  text-align: right;
+}
+
 .checkout-costs__row {
   display: flex;
   align-items: center;
@@ -2448,6 +2559,12 @@ body.cart-open .cart-drawer {
 
 .admin-main {
   padding: 42px;
+}
+
+.admin-help {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
 }
 
 .admin-hero {
@@ -3262,6 +3379,11 @@ body.cart-open .cart-drawer {
   }
 
   .checkout-actions--page {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmation-page__status-row,
+  .confirmation-page__grid {
     grid-template-columns: 1fr;
   }
 

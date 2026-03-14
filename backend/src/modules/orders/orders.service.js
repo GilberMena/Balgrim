@@ -69,9 +69,23 @@ export async function listOrders() {
   return prisma.order.findMany({
     include: {
       items: true,
-      payments: true,
+      payments: {
+        orderBy: { createdAt: "desc" },
+      },
     },
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getOrderById(id) {
+  return prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: true,
+      payments: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
   });
 }
 
@@ -90,6 +104,7 @@ export async function createLegacyOrder(payload, userId = null) {
       guestPhone: payload.customer.phone,
       guestAddress: payload.customer.address,
       guestCity: payload.customer.city || "Pendiente",
+      guestDepartment: payload.customer.department || null,
       notes: payload.customer.notes || null,
       subtotal,
       shippingAmount,

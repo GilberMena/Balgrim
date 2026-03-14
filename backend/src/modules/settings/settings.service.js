@@ -10,6 +10,7 @@ export async function getStoreSettings() {
       id: SETTINGS_ID,
       storeName: "Balgrim",
       whatsappNumber: "573000000000",
+      shippingRules: [],
     },
   });
 }
@@ -22,6 +23,7 @@ export async function updateStoreSettings(payload) {
       whatsappNumber: payload.whatsappNumber,
       shippingFlatRate: payload.shippingFlatRate ?? undefined,
       freeShippingFrom: payload.freeShippingFrom ?? undefined,
+      shippingRules: payload.shippingRules ?? undefined,
       supportEmail: payload.supportEmail || null,
     },
     create: {
@@ -30,6 +32,7 @@ export async function updateStoreSettings(payload) {
       whatsappNumber: payload.whatsappNumber,
       shippingFlatRate: payload.shippingFlatRate ?? 0,
       freeShippingFrom: payload.freeShippingFrom ?? 0,
+      shippingRules: payload.shippingRules ?? [],
       supportEmail: payload.supportEmail || null,
     },
   });

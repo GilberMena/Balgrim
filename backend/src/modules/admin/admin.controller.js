@@ -302,7 +302,9 @@ export async function getAdminOrders(req, res) {
   const orders = await prisma.order.findMany({
     include: {
       items: true,
-      payments: true,
+      payments: {
+        orderBy: { createdAt: "desc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -545,6 +547,7 @@ export async function getStoreSettingsAdmin(req, res) {
       ...settings,
       shippingFlatRate: Number(settings.shippingFlatRate),
       freeShippingFrom: Number(settings.freeShippingFrom),
+      shippingRules: Array.isArray(settings.shippingRules) ? settings.shippingRules : [],
     },
   });
 }
@@ -558,6 +561,7 @@ export async function updateStoreSettingsAdmin(req, res) {
       whatsappNumber: payload.whatsappNumber,
       shippingFlatRate: payload.shippingFlatRate || 0,
       freeShippingFrom: payload.freeShippingFrom || 0,
+      shippingRules: Array.isArray(payload.shippingRules) ? payload.shippingRules : [],
       supportEmail: payload.supportEmail || null,
     },
     create: {
@@ -566,6 +570,7 @@ export async function updateStoreSettingsAdmin(req, res) {
       whatsappNumber: payload.whatsappNumber,
       shippingFlatRate: payload.shippingFlatRate || 0,
       freeShippingFrom: payload.freeShippingFrom || 0,
+      shippingRules: Array.isArray(payload.shippingRules) ? payload.shippingRules : [],
       supportEmail: payload.supportEmail || null,
     },
   });

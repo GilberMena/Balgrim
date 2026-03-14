@@ -9,6 +9,7 @@
   getSettings,
   loadCart,
   loadCatalogFromSource,
+  loadOrderStatus,
   loadProductBySlugFromSource,
   loadContentBlocksFromSource,
   loadSettingsFromSource,
@@ -151,6 +152,7 @@ const getWhatsappUrl = (customer, orderId, checkoutTotals = null) => {
     `Celular: ${customer.phone}`,
     `Direccion: ${customer.address}`,
     customer.city ? `Ciudad: ${customer.city}` : null,
+    customer.department ? `Departamento: ${customer.department}` : null,
     customer.email ? `Email: ${customer.email}` : null,
     customer.notes ? `Notas: ${customer.notes}` : null,
     "",
@@ -281,25 +283,56 @@ const drawerMarkup = `
   <div class="cart-toast" aria-live="polite" hidden></div>
 `;
 
-const getShippingProfile = (subtotal, city = "") => {
+const normalizeGeoValue = (value = "") =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const resolveShippingRule = (city = "", department = "") => {
+  const normalizedCity = normalizeGeoValue(city);
+  const normalizedDepartment = normalizeGeoValue(department);
+  const rules = Array.isArray(settings.shippingRules) ? settings.shippingRules : [];
+
+  return (
+    rules.find((rule) => {
+      const ruleCity = normalizeGeoValue(rule.city);
+      const ruleDepartment = normalizeGeoValue(rule.department);
+      return ruleCity && ruleCity === normalizedCity;
+    }) ||
+    rules.find((rule) => {
+      const ruleCity = normalizeGeoValue(rule.city);
+      const ruleDepartment = normalizeGeoValue(rule.department);
+      return !ruleCity && ruleDepartment && ruleDepartment === normalizedDepartment;
+    }) ||
+    null
+  );
+};
+
+const getShippingProfile = (subtotal, city = "", department = "") => {
   const normalizedCity = String(city || "").trim().toLowerCase();
   const flatRate = Number(settings.shippingFlatRate || 0);
   const freeShippingFrom = Number(settings.freeShippingFrom || 0);
   const qualifiesFreeShipping = freeShippingFrom > 0 && subtotal >= freeShippingFrom;
   const localCity = normalizedCity.includes("bogota") || normalizedCity.includes("soacha");
+  const rule = resolveShippingRule(city, department);
+  const baseAmount = qualifiesFreeShipping ? 0 : Number(rule?.price ?? flatRate);
+  const baseNote = rule?.eta || (qualifiesFreeShipping ? "Gratis por monto" : "Entrega en 2 a 5 dias habiles");
+  const baseLabel = rule?.label || (localCity ? "Envio estandar" : "Envio nacional");
 
   return [
     {
       id: "standard",
-      label: localCity ? "Envio estandar" : "Envio nacional",
-      note: qualifiesFreeShipping ? "Gratis por monto" : "Entrega en 2 a 5 dias habiles",
-      amount: qualifiesFreeShipping ? 0 : flatRate,
+      label: baseLabel,
+      note: baseNote,
+      amount: baseAmount,
     },
     {
       id: "express",
       label: localCity ? "Entrega prioritaria" : "Envio express",
       note: localCity ? "Mismo dia o siguiente dia habil" : "Prioridad de despacho",
-      amount: qualifiesFreeShipping ? 9000 : flatRate + 9000,
+      amount: baseAmount + 9000,
     },
     {
       id: "pickup",
@@ -310,9 +343,9 @@ const getShippingProfile = (subtotal, city = "") => {
   ];
 };
 
-const getCheckoutTotals = (city = "", selectedShipping = "standard") => {
+const getCheckoutTotals = (city = "", department = "", selectedShipping = "standard") => {
   const subtotal = getCartTotal();
-  const shippingOptions = getShippingProfile(subtotal, city);
+  const shippingOptions = getShippingProfile(subtotal, city, department);
   const selectedOption = shippingOptions.find((option) => option.id === selectedShipping) || shippingOptions[0];
   const shippingAmount = Number(selectedOption?.amount || 0);
   return {
@@ -392,6 +425,29 @@ const renderPaymentOptionsMarkup = (selectedMethod = "WOMPI") =>
       </label>
     `
   ).join("");
+
+const getStatusLabel = (status = "") => {
+  const map = {
+    PENDING: "Pendiente",
+    AWAITING_PAYMENT: "Esperando pago",
+    PAID: "Pagado",
+    PREPARING: "Preparando",
+    SHIPPED: "Enviado",
+    DELIVERED: "Entregado",
+    CANCELLED: "Cancelado",
+    APPROVED: "Aprobado",
+    DECLINED: "Rechazado",
+    ERROR: "Error",
+  };
+  return map[status] || status || "Sin estado";
+};
+
+const getStatusTone = (status = "") => {
+  if (["PAID", "DELIVERED", "APPROVED"].includes(status)) return "is-positive";
+  if (["CANCELLED", "DECLINED", "ERROR"].includes(status)) return "is-negative";
+  if (["PREPARING", "SHIPPED"].includes(status)) return "is-neutral";
+  return "";
+};
 
 const getFloatingWhatsappContent = () => {
   const pathname = window.location.pathname.toLowerCase();
@@ -968,7 +1024,7 @@ const renderCheckoutPage = () => {
     .filter(Boolean);
 
   const cartIssues = getCartIssues();
-  const checkoutTotals = getCheckoutTotals("Bogota", "standard");
+  const checkoutTotals = getCheckoutTotals("Bogota", "Cundinamarca", "standard");
   const selectedPayment = "WOMPI";
   const selectedPaymentCopy = getPaymentMethodCopy(selectedPayment);
 
@@ -1006,6 +1062,10 @@ const renderCheckoutPage = () => {
               <label class="checkout-field">
                 <span>Ciudad</span>
                 <input type="text" name="city" placeholder="Bogota" value="Bogota" required>
+              </label>
+              <label class="checkout-field">
+                <span>Departamento</span>
+                <input type="text" name="department" placeholder="Cundinamarca" value="Cundinamarca" required>
               </label>
               <label class="checkout-field">
                 <span>Direccion</span>
@@ -1093,13 +1153,14 @@ const renderCheckoutPage = () => {
   };
 
   root.onchange = (event) => {
-    if (!event.target.matches('[name="shippingOption"], [name="city"], [name="paymentMethod"]')) return;
+    if (!event.target.matches('[name="shippingOption"], [name="city"], [name="department"], [name="paymentMethod"]')) return;
     const form = root.querySelector(".checkout-form--page");
     if (!form) return;
     const city = String(form.elements.city?.value || "");
+    const department = String(form.elements.department?.value || "");
     const shippingOption = String(form.elements.shippingOption?.value || "standard");
     const paymentMethod = String(form.elements.paymentMethod?.value || "WOMPI").toUpperCase();
-    const totals = getCheckoutTotals(city, shippingOption);
+    const totals = getCheckoutTotals(city, department, shippingOption);
     const shippingNode = root.querySelector("[data-checkout-shipping-amount]");
     const totalNode = root.querySelector("[data-checkout-total]");
     const shippingOptionsNode = root.querySelector("[data-shipping-options]");
@@ -1112,6 +1173,108 @@ const renderCheckoutPage = () => {
     if (totalNode) totalNode.textContent = formatCurrency(totals.total);
   };
 };
+
+const renderConfirmationPage = async () => {
+  const root = document.querySelector("[data-confirmation-page-root]");
+  if (!root) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get("order");
+  if (!orderId) {
+    root.innerHTML = `
+      <section class="confirmation-page">
+        <p class="product-page__eyebrow">Pedido</p>
+        <h1>No encontramos tu pedido.</h1>
+        <a class="button button--add-to-cart" href="nuevos-lanzamientos.html">Volver a la tienda</a>
+      </section>
+    `;
+    return;
+  }
+
+  root.innerHTML = `
+    <section class="confirmation-page">
+      <p class="product-page__eyebrow">Pedido</p>
+      <h1>Consultando el estado de tu compra...</h1>
+    </section>
+  `;
+
+  const response = await loadOrderStatus(orderId);
+  if (!response?.order) {
+    root.innerHTML = `
+      <section class="confirmation-page">
+        <p class="product-page__eyebrow">Pedido</p>
+        <h1>No pudimos cargar este pedido.</h1>
+        <p class="confirmation-page__intro">${response?.error || "Intenta nuevamente en un momento."}</p>
+        <a class="button button--add-to-cart" href="nuevos-lanzamientos.html">Seguir comprando</a>
+      </section>
+    `;
+    return;
+  }
+
+  const { order } = response;
+  const latestPayment = Array.isArray(order.payments) && order.payments.length ? order.payments[0] : null;
+
+  root.innerHTML = `
+    <section class="confirmation-page">
+      <div class="confirmation-page__head">
+        <div>
+          <p class="product-page__eyebrow">Confirmacion</p>
+          <h1>Pedido ${order.id}</h1>
+          <p class="confirmation-page__intro">Aqui puedes revisar el estado actual de tu pedido y del pago.</p>
+        </div>
+        <a class="button button--ghost" href="nuevos-lanzamientos.html">Seguir comprando</a>
+      </div>
+      <div class="confirmation-page__status-row">
+        <article class="confirmation-status-card">
+          <span>Estado del pedido</span>
+          <strong class="status-pill ${getStatusTone(order.status)}">${getStatusLabel(order.status)}</strong>
+        </article>
+        <article class="confirmation-status-card">
+          <span>Estado del pago</span>
+          <strong class="status-pill ${getStatusTone(latestPayment?.status)}">${getStatusLabel(latestPayment?.status || (order.status === "PENDING" ? "PENDING" : "AWAITING_PAYMENT"))}</strong>
+        </article>
+        <article class="confirmation-status-card">
+          <span>Total</span>
+          <strong>${formatCurrency(order.total || 0)}</strong>
+        </article>
+      </div>
+      <div class="confirmation-page__grid">
+        <section class="confirmation-card">
+          <h2>Datos de entrega</h2>
+          <p><strong>${order.guestName || "Cliente invitado"}</strong></p>
+          <p>${order.guestPhone || ""}</p>
+          <p>${order.guestAddress || ""}</p>
+          <p>${[order.guestCity, order.guestDepartment].filter(Boolean).join(", ")}</p>
+          ${order.guestEmail ? `<p>${order.guestEmail}</p>` : ""}
+        </section>
+        <section class="confirmation-card">
+          <h2>Resumen</h2>
+          <div class="confirmation-summary-row"><span>Subtotal</span><strong>${formatCurrency(order.subtotal || 0)}</strong></div>
+          <div class="confirmation-summary-row"><span>Envio</span><strong>${order.shippingAmount ? formatCurrency(order.shippingAmount) : "Gratis"}</strong></div>
+          <div class="confirmation-summary-row confirmation-summary-row--total"><span>Total</span><strong>${formatCurrency(order.total || 0)}</strong></div>
+        </section>
+      </div>
+      <section class="confirmation-card">
+        <h2>Items del pedido</h2>
+        <div class="confirmation-items">
+          ${order.items.map((item) => `
+            <article class="confirmation-item">
+              <div>
+                <strong>${item.productName}</strong>
+                <p>${item.variantLabel}</p>
+              </div>
+              <div class="confirmation-item__meta">
+                <span>${item.quantity} x ${formatCurrency(item.unitPrice || 0)}</span>
+                <strong>${formatCurrency(item.totalPrice || 0)}</strong>
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    </section>
+  `;
+};
+
 const renderEditorialBlocks = () => {
   const main = document.querySelector("main");
   if (!main) return;
@@ -1393,9 +1556,10 @@ const submitCheckout = async (form, submitter = null) => {
     submitter?.dataset.checkoutMode === "whatsapp" ? "WHATSAPP" : selectedPaymentMethod;
   const isDedicatedCheckout = form.classList.contains("checkout-form--page");
   const city = String(formData.get("city") || "").trim();
+  const department = String(formData.get("department") || "").trim();
   const selectedShipping = String(formData.get("shippingOption") || "standard");
   const checkoutTotals = isDedicatedCheckout
-    ? getCheckoutTotals(city, selectedShipping)
+    ? getCheckoutTotals(city, department, selectedShipping)
     : {
         subtotal: getCartTotal(),
         shippingOptions: [],
@@ -1409,14 +1573,15 @@ const submitCheckout = async (form, submitter = null) => {
     phone: String(formData.get("phone") || "").trim(),
     address: String(formData.get("address") || "").trim(),
     city,
+    department,
     notes: String(formData.get("notes") || "").trim(),
   };
 
   const errorBox = form.querySelector(".checkout-error");
 
-  if (!customer.name || !customer.phone || !customer.address || (isDedicatedCheckout && !customer.city)) {
+  if (!customer.name || !customer.phone || !customer.address || (isDedicatedCheckout && (!customer.city || !customer.department))) {
     errorBox.hidden = false;
-    errorBox.textContent = "Completa nombre, celular, ciudad y direccion para continuar.";
+    errorBox.textContent = "Completa nombre, celular, ciudad, departamento y direccion para continuar.";
     return;
   }
 
@@ -1480,6 +1645,9 @@ const submitCheckout = async (form, submitter = null) => {
   if (checkoutMode === "WHATSAPP") {
     window.open(getWhatsappUrl(customer, orderId, checkoutTotals), "_blank", "noopener");
     showToast(orderId ? `Pedido ${orderId} enviado a WhatsApp.` : "Resumen enviado a WhatsApp.");
+    if (orderId) {
+      window.location.href = `confirmacion.html?order=${encodeURIComponent(orderId)}&channel=whatsapp`;
+    }
     return;
   }
 
@@ -1491,6 +1659,7 @@ const submitCheckout = async (form, submitter = null) => {
       phone: customer.phone,
       address: customer.address,
       city: customer.city,
+      department: customer.department,
     },
   };
 
@@ -1622,6 +1791,7 @@ const init = async () => {
   renderDynamicProductGrids();
   await renderProductPage();
   renderCheckoutPage();
+  await renderConfirmationPage();
   enhanceProductCards();
   updateBadges();
   renderCart();

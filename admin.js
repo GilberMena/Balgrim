@@ -23,6 +23,44 @@ const formatDate = (value) => {
   return new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(date);
 };
 
+const parseShippingRulesText = (raw = "") =>
+  String(raw || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [label = "", department = "", city = "", price = "0", eta = ""] = line.split("|").map((part) => part.trim());
+      return {
+        id: `rule-${index + 1}`,
+        label,
+        department,
+        city,
+        price: Number(price || 0),
+        eta,
+      };
+    })
+    .filter((rule) => rule.label && Number.isFinite(rule.price));
+
+const formatShippingRulesText = (rules = []) =>
+  (Array.isArray(rules) ? rules : [])
+    .map((rule) => [
+      rule.label || "",
+      rule.department || "",
+      rule.city || "",
+      Number(rule.price || 0),
+      rule.eta || "",
+    ].join("|"))
+    .join("\n");
+
+const getPrimaryPayment = (order) => (Array.isArray(order.payments) && order.payments.length ? order.payments[0] : null);
+
+const getStatusTone = (status = "") => {
+  if (["PAID", "DELIVERED", "APPROVED"].includes(status)) return "is-positive";
+  if (["CANCELLED", "DECLINED", "ERROR"].includes(status)) return "is-negative";
+  if (["PREPARING", "SHIPPED"].includes(status)) return "is-neutral";
+  return "";
+};
+
 const emptyVariant = () => ({ id: "", sku: "", size: "M", color: "Negro", stock: 0, price: 0, compareAtPrice: "", imageUrl: "" });
 const emptyProduct = () => ({ id: "", name: "", category: "Nuevos lanzamientos", description: "", active: true, featured: false, images: [], variants: [emptyVariant()] });
 const emptyCoupon = () => ({ code: "", description: "", discountType: "percentage", discountValue: "", minOrderAmount: "", active: true, startsAt: "", endsAt: "", usageLimit: "" });
@@ -360,7 +398,7 @@ const renderDashboard = () => {
   if (recent) {
     recent.innerHTML = (state.dashboard.recentOrders || []).length
       ? state.dashboard.recentOrders.map((order) => `
-        <article class="admin-stack-item"><div><strong>${order.guestName || order.id}</strong><span>${order.status}</span></div><div><strong>${formatCurrency(order.total || 0)}</strong><span>${formatDate(order.createdAt)}</span></div></article>`).join("")
+        <article class="admin-stack-item"><div><strong>${order.guestName || order.id}</strong><span class="status-pill ${getStatusTone(order.status)}">${order.status}</span></div><div><strong>${formatCurrency(order.total || 0)}</strong><span>${formatDate(order.createdAt)}</span></div></article>`).join("")
       : `<p class="admin-empty">Todavia no hay pedidos recientes.</p>`;
   }
   if (low) {
@@ -402,6 +440,10 @@ const renderOrders = () => {
   container.innerHTML = state.orders.length ? state.orders.map((order) => `
     <article class="admin-order-card">
       <div class="admin-order-card__head"><div><p class="admin-order-card__eyebrow">${order.id}</p><h3>${order.guestName || "Cliente invitado"}</h3><span>${order.guestPhone || "Sin telefono"}</span></div><div class="admin-order-card__amounts"><strong>${formatCurrency(order.total || 0)}</strong><span>${formatDate(order.createdAt)}</span></div></div>
+      <div class="admin-pill-row">
+        <span class="status-pill ${getStatusTone(order.status)}">Pedido: ${order.status}</span>
+        ${getPrimaryPayment(order) ? `<span class="status-pill ${getStatusTone(getPrimaryPayment(order)?.status)}">Pago: ${getPrimaryPayment(order)?.provider} / ${getPrimaryPayment(order)?.status}</span>` : `<span class="status-pill">Pago: pendiente manual</span>`}
+      </div>
       <p class="admin-order-card__address">${order.guestAddress || "Sin direccion"}${order.guestCity ? `, ${order.guestCity}` : ""}</p>
       <div class="admin-pill-row">${order.items.map((item) => `<span class="admin-pill">${item.productName} x${item.quantity}</span>`).join("")}</div>
       <form class="admin-order-form" data-order-id="${order.id}"><div class="admin-form-grid admin-form-grid--double"><label class="checkout-field"><span>Estado</span><select name="status">${ORDER_STATUSES.map((status) => `<option value="${status}"${status === order.status ? " selected" : ""}>${status}</option>`).join("")}</select></label><label class="checkout-field admin-field--full"><span>Notas internas</span><textarea name="internalNotes" rows="3" placeholder="Notas de logistica o soporte">${order.internalNotes || ""}</textarea></label></div><p class="admin-feedback" data-order-feedback="${order.id}"></p><button class="button button--add-to-cart" type="submit">Actualizar pedido</button></form>
@@ -490,6 +532,7 @@ const renderSettings = () => {
   form.elements.supportEmail.value = state.settings.supportEmail || "";
   form.elements.shippingFlatRate.value = state.settings.shippingFlatRate || 0;
   form.elements.freeShippingFrom.value = state.settings.freeShippingFrom || 0;
+  form.elements.shippingRules.value = formatShippingRulesText(state.settings.shippingRules || []);
 };
 
 const renderAudit = () => {
@@ -948,7 +991,7 @@ const bindEvents = () => {
     if (event.target.matches(".settings-form")) {
       event.preventDefault();
       const formData = new FormData(event.target);
-      try { await adminSaveStoreSettings({ id: state.settings.id, storeName: String(formData.get("storeName") || "").trim(), whatsappNumber: String(formData.get("whatsappNumber") || "").trim(), supportEmail: String(formData.get("supportEmail") || "").trim(), shippingFlatRate: Number(formData.get("shippingFlatRate") || 0), freeShippingFrom: Number(formData.get("freeShippingFrom") || 0) }); await refreshAdminData(); writeFeedback("[data-settings-feedback]", "Configuracion guardada."); } catch (error) { writeFeedback("[data-settings-feedback]", error.message, true); }
+      try { await adminSaveStoreSettings({ id: state.settings.id, storeName: String(formData.get("storeName") || "").trim(), whatsappNumber: String(formData.get("whatsappNumber") || "").trim(), supportEmail: String(formData.get("supportEmail") || "").trim(), shippingFlatRate: Number(formData.get("shippingFlatRate") || 0), freeShippingFrom: Number(formData.get("freeShippingFrom") || 0), shippingRules: parseShippingRulesText(String(formData.get("shippingRules") || "")) }); await refreshAdminData(); writeFeedback("[data-settings-feedback]", "Configuracion guardada."); } catch (error) { writeFeedback("[data-settings-feedback]", error.message, true); }
     }
   });
 };

@@ -1,5 +1,10 @@
 import { createOrderSchema, legacyOrderSchema } from "./orders.schemas.js";
-import { createLegacyOrder, createOrderFromCart, listOrders } from "./orders.service.js";
+import {
+  createLegacyOrder,
+  createOrderFromCart,
+  getOrderById,
+  listOrders,
+} from "./orders.service.js";
 
 export async function createOrder(req, res) {
   let order;
@@ -19,4 +24,30 @@ export async function createOrder(req, res) {
 export async function getOrders(req, res) {
   const orders = await listOrders();
   res.json({ orders });
+}
+
+export async function getOrderStatus(req, res) {
+  const order = await getOrderById(req.params.id);
+  if (!order) {
+    res.status(404).json({ error: "Order not found." });
+    return;
+  }
+
+  res.json({
+    order: {
+      ...order,
+      subtotal: Number(order.subtotal),
+      shippingAmount: Number(order.shippingAmount),
+      total: Number(order.total),
+      items: order.items.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+      })),
+      payments: order.payments.map((payment) => ({
+        ...payment,
+        amount: Number(payment.amount),
+      })),
+    },
+  });
 }

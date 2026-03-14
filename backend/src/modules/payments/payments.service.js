@@ -46,7 +46,7 @@ export async function createWompiCheckout(order, customer = {}) {
     };
   }
 
-  const redirectUrl = `${env.FRONTEND_URL}/checkout.html?payment=wompi&order=${encodeURIComponent(order.id)}`;
+  const redirectUrl = `${env.FRONTEND_URL}/confirmacion.html?payment=wompi&order=${encodeURIComponent(order.id)}`;
   const integrity = crypto
     .createHash("sha256")
     .update(`${reference}${amountInCents}COP${env.WOMPI_INTEGRITY_SECRET}`)

@@ -91,6 +91,7 @@
     storeName: "Balgrim",
     shippingFlatRate: 15000,
     freeShippingFrom: 280000,
+    shippingRules: [],
     supportEmail: "soporte@balgrim.co",
   };
 
@@ -330,6 +331,14 @@
         method: "POST",
         body: JSON.stringify(order),
       });
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const loadOrderStatus = async (orderId) => {
+    try {
+      return await apiRequest(`/api/orders/${encodeURIComponent(orderId)}`);
     } catch (error) {
       return { ok: false, error: error.message };
     }
@@ -576,6 +585,7 @@
     createOrder,
     createProviderCheckout,
     createWompiCheckout,
+    loadOrderStatus,
     formatCurrency,
     API_BASE_URL,
     getAdminSession,

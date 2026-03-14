@@ -480,7 +480,12 @@
                       <span>Envio gratis desde</span>
                       <input type="number" name="freeShippingFrom" min="0" step="1000">
                     </label>
+                    <label class="checkout-field admin-field--full">
+                      <span>Tarifas por ciudad o departamento</span>
+                      <textarea name="shippingRules" rows="6" placeholder="Bogota express|Cundinamarca|Bogota|12000|Mismo dia&#10;Antioquia base|Antioquia||18000|2 a 4 dias habiles"></textarea>
+                    </label>
                   </div>
+                  <p class="admin-help">Usa el formato: `Etiqueta | Departamento | Ciudad | Precio | ETA`. Puedes dejar ciudad vacia para aplicar toda la regla al departamento.</p>
                   <p class="admin-feedback" data-settings-feedback></p>
                   <button class="button button--add-to-cart button--checkout" type="submit">Guardar configuracion</button>
                 </form>

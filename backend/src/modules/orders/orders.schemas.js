@@ -16,6 +16,7 @@ export const legacyOrderSchema = z.object({
     phone: z.string().min(7),
     address: z.string().min(5),
     city: z.string().min(2).optional().or(z.literal("")),
+    department: z.string().min(2).optional().or(z.literal("")),
     notes: z.string().optional(),
   }),
   items: z.array(

@@ -31,6 +31,7 @@ enum OrderStatus {
 enum PaymentProvider {
   WOMPI
   MERCADOPAGO
+  ADDI
   STRIPE
 }
 
@@ -159,6 +160,7 @@ model Order {
   guestPhone        String?
   guestAddress      String?
   guestCity         String?
+  guestDepartment   String?
   status            OrderStatus    @default(PENDING)
   subtotal          Decimal        @db.Decimal(10, 2)
   shippingAmount    Decimal        @default(0) @db.Decimal(10, 2)
@@ -205,6 +207,7 @@ model StoreSettings {
   whatsappNumber String
   shippingFlatRate Decimal @default(0) @db.Decimal(10, 2)
   freeShippingFrom Decimal @default(0) @db.Decimal(10, 2)
+  shippingRules  Json?
   supportEmail   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
