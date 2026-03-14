@@ -5,6 +5,17 @@ Thumbs.db
 # Artefactos temporales locales
 chrome-site/
 chrome-tmp/
+data/users.json
+backend/node_modules/
+backend/.env
+backend/uploads/
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/*.log
+backend/*.err.log
+frontend-next/node_modules/
+frontend-next/.next/
+frontend-next/out/
 
 # Vercel
 .vercel/

@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+enum CartStatus {
+  ACTIVE
+  CONVERTED
+  ABANDONED
+}
+
+enum OrderStatus {
+  PENDING
+  AWAITING_PAYMENT
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  WOMPI
+  MERCADOPAGO
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  ERROR
+  REFUNDED
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  phone        String?
+  role         UserRole    @default(CUSTOMER)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  addresses    Address[]
+  carts        Cart[]
+  orders       Order[]
+  auditLogs    AdminAuditLog[] @relation("AdminAuditActor")
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  label       String?
+  fullName    String
+  phone       String
+  line1       String
+  line2       String?
+  city        String
+  department  String?
+  country     String   @default("CO")
+  postalCode  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  categoryId  String?
+  name        String
+  slug        String           @unique
+  description String?
+  active      Boolean          @default(true)
+  featured    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  category    Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images      ProductImage[]
+  variants    ProductVariant[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  isPrimary Boolean  @default(false)
+  position  Int      @default(0)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductVariant {
+  id            String      @id @default(cuid())
+  productId     String
+  sku           String      @unique
+  size          String
+  color         String
+  stock         Int         @default(0)
+  price         Decimal     @db.Decimal(10, 2)
+  compareAtPrice Decimal?   @db.Decimal(10, 2)
+  imageUrl      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  adjustments   InventoryAdjustment[]
+}
+
+model Cart {
+  id         String      @id @default(cuid())
+  userId     String?
+  sessionId  String?     @unique
+  status     CartStatus  @default(ACTIVE)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items      CartItem[]
+}
+
+model CartItem {
+  id               String         @id @default(cuid())
+  cartId           String
+  productVariantId String
+  quantity         Int            @default(1)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  cart             Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, productVariantId])
+}
+
+model Order {
+  id                String         @id @default(cuid())
+  userId            String?
+  guestName         String?
+  guestEmail        String?
+  guestPhone        String?
+  guestAddress      String?
+  guestCity         String?
+  status            OrderStatus    @default(PENDING)
+  subtotal          Decimal        @db.Decimal(10, 2)
+  shippingAmount    Decimal        @default(0) @db.Decimal(10, 2)
+  discountAmount    Decimal        @default(0) @db.Decimal(10, 2)
+  total             Decimal        @db.Decimal(10, 2)
+  notes             String?
+  internalNotes     String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  user              User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+  payments          Payment[]
+}
+
+model OrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  productVariantId String?
+  productName      String
+  variantLabel     String
+  quantity         Int
+  unitPrice        Decimal        @db.Decimal(10, 2)
+  totalPrice       Decimal        @db.Decimal(10, 2)
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+}
+
+model Payment {
+  id               String          @id @default(cuid())
+  orderId          String
+  provider         PaymentProvider
+  providerRef      String?         @unique
+  status           PaymentStatus   @default(PENDING)
+  amount           Decimal         @db.Decimal(10, 2)
+  rawPayload       Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model StoreSettings {
+  id             String   @id @default(cuid())
+  storeName      String
+  whatsappNumber String
+  shippingFlatRate Decimal @default(0) @db.Decimal(10, 2)
+  freeShippingFrom Decimal @default(0) @db.Decimal(10, 2)
+  supportEmail   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Coupon {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  description      String?
+  discountType     String
+  discountValue    Decimal  @db.Decimal(10, 2)
+  minOrderAmount   Decimal? @db.Decimal(10, 2)
+  active           Boolean  @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  usageLimit       Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model InventoryAdjustment {
+  id               String         @id @default(cuid())
+  productVariantId String
+  quantityChange   Int
+  reason           String
+  createdAt        DateTime       @default(now())
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+}
+
+model ContentBlock {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  body        String?
+  imageUrl    String?
+  actionLabel String?
+  actionHref  String?
+  active      Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  action      String
+  entityType  String
+  entityId    String
+  summary     String
+  payload     Json?
+  createdAt   DateTime @default(now())
+  actor       User?    @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+}

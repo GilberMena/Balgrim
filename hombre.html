@@ -21,8 +21,8 @@
       </nav>
       <div class="toolbar" aria-label="Acciones de cuenta">
         <a class="icon-button" href="/" aria-label="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16L21 21"></path></svg></a>
-        <a class="icon-button" href="/" aria-label="Cuenta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20C5.8 16.8 8.5 15 12 15C15.5 15 18.2 16.8 19 20"></path></svg></a>
-        <a class="icon-button icon-button--cart" href="/" aria-label="Carrito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7H17L16 20H8L7 7Z"></path><path d="M9 7C9 4.8 10.4 3.5 12 3.5C13.6 3.5 15 4.8 15 7"></path></svg><span class="cart-badge">0</span></a>
+        <a class="icon-button" href="admin.html" aria-label="Admin"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20C5.8 16.8 8.5 15 12 15C15.5 15 18.2 16.8 19 20"></path></svg></a>
+        <a class="icon-button icon-button--cart" href="#carrito" aria-label="Carrito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7H17L16 20H8L7 7Z"></path><path d="M9 7C9 4.8 10.4 3.5 12 3.5C13.6 3.5 15 4.8 15 7"></path></svg><span class="cart-badge">0</span></a>
       </div>
     </header>
 
@@ -50,9 +50,9 @@
 
       <section class="catalog-section" id="catalogo">
         <div class="catalog-grid">
-          <article class="catalog-card"><div class="catalog-card__media catalog-card__media--dark"></div><div class="catalog-card__body"><h2 class="catalog-card__title">Black Fortitude Tee</h2><div class="catalog-card__meta"><span>Algodón pesado</span><span class="catalog-card__price">$139.000</span></div></div></article>
-          <article class="catalog-card"><div class="catalog-card__media"></div><div class="catalog-card__body"><h2 class="catalog-card__title">Ivory Core Tee</h2><div class="catalog-card__meta"><span>Fit regular</span><span class="catalog-card__price">$129.000</span></div></div></article>
-          <article class="catalog-card"><div class="catalog-card__media catalog-card__media--dark"></div><div class="catalog-card__body"><h2 class="catalog-card__title">Statement Back Print</h2><div class="catalog-card__meta"><span>Edición gráfica</span><span class="catalog-card__price">$149.000</span></div></div></article>
+          <article class="catalog-card" data-product-id="black-fortitude-tee"><div class="catalog-card__media catalog-card__media--dark"></div><div class="catalog-card__body"><h2 class="catalog-card__title">Black Fortitude Tee</h2><div class="catalog-card__meta"><span>Algodón pesado</span><span class="catalog-card__price">$139.000</span></div></div></article>
+          <article class="catalog-card" data-product-id="ivory-core-tee"><div class="catalog-card__media"></div><div class="catalog-card__body"><h2 class="catalog-card__title">Ivory Core Tee</h2><div class="catalog-card__meta"><span>Fit regular</span><span class="catalog-card__price">$129.000</span></div></div></article>
+          <article class="catalog-card" data-product-id="statement-back-print"><div class="catalog-card__media catalog-card__media--dark"></div><div class="catalog-card__body"><h2 class="catalog-card__title">Statement Back Print</h2><div class="catalog-card__meta"><span>Edición gráfica</span><span class="catalog-card__price">$149.000</span></div></div></article>
         </div>
       </section>
 
@@ -71,5 +71,12 @@
       <div class="footer-brand"><div class="footer-logo">BALGRIM</div><div class="socials" aria-label="Redes sociales"><a class="social-icon" href="/" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect><circle cx="12" cy="12" r="4.2"></circle><circle cx="17.3" cy="6.8" r="0.9" fill="currentColor" stroke="none"></circle></svg></a><a class="social-icon" href="/" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 20V12.6H16L16.4 9.8H13.5V8C13.5 7.1 14 6.4 15.4 6.4H16.5V4C15.9 3.9 15.3 3.8 14.7 3.8C11.9 3.8 10.2 5.4 10.2 8.5V9.8H8V12.6H10.2V20"></path></svg></a><a class="social-icon" href="/" aria-label="TikTok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4V13.4C14 15.2 12.7 16.5 10.9 16.5C9.4 16.5 8.2 15.3 8.2 13.8C8.2 12.2 9.5 11 11.1 11C11.5 11 11.9 11.1 12.2 11.2V8.1C11.8 8 11.4 8 11 8C7.8 8 5.2 10.6 5.2 13.8C5.2 17 7.8 19.6 11 19.6C14.2 19.6 16.8 17 16.8 13.8V9.4C17.9 10.2 19.2 10.7 20.6 10.8V7.7C18.2 7.5 16.1 6 15.3 4H14Z"></path></svg></a></div></div>
     </footer>
   </div>
+  <script defer src="store.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>
+
+
+
+
+

@@ -23,10 +23,10 @@
         <a class="icon-button" href="/" aria-label="Buscar">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16L21 21"></path></svg>
         </a>
-        <a class="icon-button" href="/" aria-label="Cuenta">
+        <a class="icon-button" href="admin.html" aria-label="Admin">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20C5.8 16.8 8.5 15 12 15C15.5 15 18.2 16.8 19 20"></path></svg>
         </a>
-        <a class="icon-button icon-button--cart" href="/" aria-label="Carrito">
+        <a class="icon-button icon-button--cart" href="#carrito" aria-label="Carrito">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7H17L16 20H8L7 7Z"></path><path d="M9 7C9 4.8 10.4 3.5 12 3.5C13.6 3.5 15 4.8 15 7"></path></svg>
           <span class="cart-badge">0</span>
         </a>
@@ -71,21 +71,21 @@
 
       <section class="catalog-section" id="catalogo">
         <div class="catalog-grid">
-          <article class="catalog-card">
+          <article class="catalog-card" data-product-id="fortitude-tee">
             <div class="catalog-card__media"></div>
             <div class="catalog-card__body">
               <h2 class="catalog-card__title">T-Shirt Fortitude</h2>
               <div class="catalog-card__meta"><span>Drop esencial</span><span class="catalog-card__price">$129.000</span></div>
             </div>
           </article>
-          <article class="catalog-card">
+          <article class="catalog-card" data-product-id="special-edition-tee">
             <div class="catalog-card__media catalog-card__media--dark"></div>
             <div class="catalog-card__body">
               <h2 class="catalog-card__title">T-Shirt Special Edition</h2>
               <div class="catalog-card__meta"><span>Edición limitada</span><span class="catalog-card__price">$149.000</span></div>
             </div>
           </article>
-          <article class="catalog-card">
+          <article class="catalog-card" data-product-id="creative-sanctuary-tee">
             <div class="catalog-card__media"></div>
             <div class="catalog-card__body">
               <h2 class="catalog-card__title">Creative Sanctuary</h2>
@@ -135,5 +135,12 @@
       </div>
     </footer>
   </div>
+  <script defer src="store.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>
+
+
+
+
+

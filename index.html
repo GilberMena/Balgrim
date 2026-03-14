@@ -26,13 +26,13 @@
             <path d="M16 16L21 21"></path>
           </svg>
         </a>
-        <a class="icon-button" href="/" aria-label="Cuenta">
+        <a class="icon-button" href="admin.html" aria-label="Admin">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="8" r="3.5"></circle>
             <path d="M5 20C5.8 16.8 8.5 15 12 15C15.5 15 18.2 16.8 19 20"></path>
           </svg>
         </a>
-        <a class="icon-button icon-button--cart" href="/" aria-label="Carrito">
+        <a class="icon-button icon-button--cart" href="#carrito" aria-label="Carrito">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M7 7H17L16 20H8L7 7Z"></path>
             <path d="M9 7C9 4.8 10.4 3.5 12 3.5C13.6 3.5 15 4.8 15 7"></path>
@@ -79,7 +79,7 @@
       <section class="products">
         <button class="slider-arrow slider-arrow--left" type="button" aria-label="Producto anterior">&#8249;</button>
         <div class="product-grid">
-          <article class="product-card">
+          <article class="product-card" data-product-id="fortitude-tee">
             <div class="product-stack">
               <div class="product-image product-image--01 product-image--front"></div>
               <div class="product-image product-image--04 product-image--back"></div>
@@ -87,7 +87,7 @@
             <h3>T- Shirt Fortitude</h3>
           </article>
 
-          <article class="product-card">
+          <article class="product-card" data-product-id="special-edition-tee">
             <div class="product-stack">
               <div class="product-image product-image--02 product-image--front"></div>
               <div class="product-image product-image--05 product-image--back"></div>
@@ -95,7 +95,7 @@
             <h3>T- Shirt Special Edition</h3>
           </article>
 
-          <article class="product-card" id="accesorios">
+          <article class="product-card" id="accesorios" data-product-id="creative-sanctuary-tee">
             <div class="product-stack">
               <div class="product-image product-image--03 product-image--front"></div>
               <div class="product-image product-image--06 product-image--back"></div>
@@ -154,5 +154,12 @@
       </div>
     </footer>
   </div>
+  <script defer src="store.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>
+
+
+
+
+

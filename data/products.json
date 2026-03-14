@@ -1,0 +1,86 @@
+{
+  "fortitude-tee": {
+    "id": "fortitude-tee",
+    "name": "T-Shirt Fortitude",
+    "price": 129000,
+    "category": "Nuevos lanzamientos",
+    "note": "Drop esencial"
+  },
+  "special-edition-tee": {
+    "id": "special-edition-tee",
+    "name": "T-Shirt Special Edition",
+    "price": 149000,
+    "category": "Nuevos lanzamientos",
+    "note": "Edicion limitada"
+  },
+  "creative-sanctuary-tee": {
+    "id": "creative-sanctuary-tee",
+    "name": "Creative Sanctuary",
+    "price": 139000,
+    "category": "Nuevos lanzamientos",
+    "note": "Grafico posterior"
+  },
+  "black-fortitude-tee": {
+    "id": "black-fortitude-tee",
+    "name": "Black Fortitude Tee",
+    "price": 139000,
+    "category": "Hombre",
+    "note": "Algodon pesado"
+  },
+  "ivory-core-tee": {
+    "id": "ivory-core-tee",
+    "name": "Ivory Core Tee",
+    "price": 129000,
+    "category": "Hombre",
+    "note": "Fit regular"
+  },
+  "statement-back-print": {
+    "id": "statement-back-print",
+    "name": "Statement Back Print",
+    "price": 149000,
+    "category": "Hombre",
+    "note": "Edicion grafica"
+  },
+  "signature-crop-tee": {
+    "id": "signature-crop-tee",
+    "name": "Signature Crop Tee",
+    "price": 129000,
+    "category": "Mujer",
+    "note": "Bordado fino"
+  },
+  "noir-essential-tee": {
+    "id": "noir-essential-tee",
+    "name": "Noir Essential Tee",
+    "price": 139000,
+    "category": "Mujer",
+    "note": "Negro profundo"
+  },
+  "sanctuary-oversize": {
+    "id": "sanctuary-oversize",
+    "name": "Sanctuary Oversize",
+    "price": 149000,
+    "category": "Mujer",
+    "note": "Espalda statement"
+  },
+  "balgrim-cap": {
+    "id": "balgrim-cap",
+    "name": "Balgrim Cap",
+    "price": 119000,
+    "category": "Accesorios",
+    "note": "Logo frontal"
+  },
+  "minimal-backpack": {
+    "id": "minimal-backpack",
+    "name": "Minimal Backpack",
+    "price": 249000,
+    "category": "Accesorios",
+    "note": "Utility line"
+  },
+  "signature-tote": {
+    "id": "signature-tote",
+    "name": "Signature Tote",
+    "price": 169000,
+    "category": "Accesorios",
+    "note": "Neutral canvas"
+  }
+}

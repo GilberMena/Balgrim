@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Balgrim</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+  <div class="subpage-shell">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Balgrim inicio">BALGRIM</a>
+      <nav class="nav">
+        <a href="nuevos-lanzamientos.html">Nuevos lanzamientos</a>
+        <a href="hombre.html">Hombre</a>
+        <a href="mujer.html">Mujer</a>
+        <a href="accesorios.html">Accesorios</a>
+      </nav>
+      <div class="toolbar" aria-label="Acciones de cuenta">
+        <a class="icon-button" href="index.html" aria-label="Inicio">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5L12 4L20 10.5"></path><path d="M6.5 9.5V20H17.5V9.5"></path></svg>
+        </a>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <section class="admin-auth">
+        <div class="admin-auth__card">
+          <p class="subhero-kicker">Backend real</p>
+          <h1 class="subhero-title">Acceso admin</h1>
+          <p class="subhero-text">Ingresa para gestionar pedidos, productos, inventario, clientes, cupones y la experiencia editorial de la tienda.</p>
+          <form class="admin-login-form">
+            <label class="checkout-field">
+              <span>Email</span>
+              <input type="email" name="email" placeholder="admin@balgrim.co" required>
+            </label>
+            <label class="checkout-field">
+              <span>Contrasena</span>
+              <input type="password" name="password" placeholder="Balgrim123!" required>
+            </label>
+            <p class="admin-feedback"></p>
+            <button class="button button--add-to-cart button--checkout" type="submit">Entrar al panel</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="admin-app" hidden>
+        <section class="admin-topline">
+          <div>
+            <p class="subhero-kicker">Control room</p>
+            <h1 class="subhero-title">Admin operativo de Balgrim</h1>
+            <p class="subhero-text">Sesion activa como <strong data-admin-user></strong>. Desde aqui controlamos drops, ordenes, inventario y contenido comercial.</p>
+          </div>
+          <div class="admin-topline__actions">
+            <div class="admin-presence">
+              <span class="admin-presence__dot"></span>
+              <span>API conectada</span>
+            </div>
+            <button class="button button--add-to-cart" type="button" data-admin-logout>Cerrar sesion</button>
+          </div>
+        </section>
+
+        <section class="admin-kpis">
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Ingresos</span>
+            <strong data-metric-revenue>$0</strong>
+            <p>Ventas confirmadas en ordenes pagadas o entregadas.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Pedidos</span>
+            <strong data-metric-orders>0</strong>
+            <p>Flujo total capturado desde checkout y admin.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Productos</span>
+            <strong data-metric-products>0</strong>
+            <p>Catalogo activo y editable por variantes.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Stock critico</span>
+            <strong data-metric-low-stock>0</strong>
+            <p>Variantes con inventario bajo para reaccion rapida.</p>
+          </article>
+        </section>
+
+        <section class="admin-shell">
+          <aside class="admin-nav">
+            <button class="admin-nav__item is-active" type="button" data-admin-view-trigger="dashboard">Dashboard</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="orders">Pedidos</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="products">Productos</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="inventory">Inventario</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="customers">Clientes</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="coupons">Cupones</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="content">Contenido</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="settings">Configuracion</button>
+            <button class="admin-nav__item" type="button" data-admin-view-trigger="audit">Auditoria</button>
+          </aside>
+
+          <div class="admin-views">
+            <section class="admin-view is-active" data-admin-view="dashboard">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Resumen</p>
+                  <h2>Ritmo de la tienda</h2>
+                </div>
+              </div>
+              <div class="admin-dashboard-grid">
+                <article class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Pedidos recientes</h3>
+                  </div>
+                  <div class="admin-stack-list" data-dashboard-recent-orders></div>
+                </article>
+                <article class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Stock por revisar</h3>
+                  </div>
+                  <div class="admin-stack-list" data-dashboard-low-stock></div>
+                </article>
+                <article class="admin-panel-card admin-panel-card--wide">
+                  <div class="admin-panel-card__header">
+                    <h3>Atajos del dia</h3>
+                  </div>
+                  <div class="admin-shortcuts">
+                    <button class="admin-shortcut" type="button" data-admin-view-jump="products">Crear nuevo drop</button>
+                    <button class="admin-shortcut" type="button" data-admin-view-jump="orders">Actualizar estados</button>
+                    <button class="admin-shortcut" type="button" data-admin-view-jump="inventory">Ajustar stock</button>
+                    <button class="admin-shortcut" type="button" data-admin-view-jump="content">Editar hero</button>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="admin-view" data-admin-view="orders">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Operacion</p>
+                  <h2>Pedidos</h2>
+                </div>
+              </div>
+              <div class="admin-orders-list" data-orders-list></div>
+            </section>
+
+            <section class="admin-view" data-admin-view="products">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Catalogo</p>
+                  <h2>Productos y variantes</h2>
+                </div>
+                <div class="admin-inline-actions">
+                  <button class="button button--add-to-cart" type="button" data-admin-new-product>Nuevo producto</button>
+                  <button class="button button--add-to-cart" type="button" data-admin-delete-product>Eliminar seleccionado</button>
+                </div>
+              </div>
+              <div class="admin-products-grid">
+                <aside class="admin-panel-card admin-product-browser">
+                  <div class="admin-panel-card__header">
+                    <h3>Catalogo</h3>
+                  </div>
+                  <div class="admin-list" data-products-list></div>
+                </aside>
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Ficha del producto</h3>
+                  </div>
+                  <form class="admin-product-form">
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Slug</span>
+                        <input type="text" name="id" placeholder="creative-sanctuary-tee" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Nombre</span>
+                        <input type="text" name="name" placeholder="Creative Sanctuary" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Categoria</span>
+                        <input type="text" name="category" placeholder="Nuevos lanzamientos" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Activo</span>
+                        <select name="active">
+                          <option value="true">Activo</option>
+                          <option value="false">Oculto</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Destacado</span>
+                        <select name="featured">
+                          <option value="false">No</option>
+                          <option value="true">Si</option>
+                        </select>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Subir imagenes</span>
+                        <input type="file" name="productImageFiles" accept="image/*" multiple>
+                      </label>
+                      <label class="checkout-field admin-field--full">
+                        <span>Imagenes</span>
+                        <textarea name="images" rows="4" placeholder="https://... una por linea"></textarea>
+                      </label>
+                    </div>
+                    <div class="admin-image-preview-grid" data-product-images-preview></div>
+                    <label class="checkout-field">
+                      <span>Descripcion</span>
+                      <textarea name="description" rows="4" placeholder="Historia del producto, look editorial, detalles de fit..."></textarea>
+                    </label>
+                    <div class="admin-panel-card__header admin-panel-card__header--tight">
+                      <h3>Variantes</h3>
+                      <button class="button button--add-to-cart" type="button" data-admin-add-variant>Agregar variante</button>
+                    </div>
+                    <div class="admin-variant-list" data-variants-list></div>
+                    <p class="admin-feedback" data-product-feedback></p>
+                    <button class="button button--add-to-cart button--checkout" type="submit">Guardar producto</button>
+                  </form>
+                </section>
+              </div>
+            </section>
+
+            <section class="admin-view" data-admin-view="inventory">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Stock</p>
+                  <h2>Inventario</h2>
+                </div>
+              </div>
+              <div class="admin-split-grid">
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Ajuste rapido</h3>
+                  </div>
+                  <form class="inventory-form">
+                    <label class="checkout-field">
+                      <span>Variante</span>
+                      <select name="productVariantId" data-inventory-variant-select></select>
+                    </label>
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Cambio de stock</span>
+                        <input type="number" name="quantityChange" step="1" placeholder="5 o -2" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Motivo</span>
+                        <input type="text" name="reason" placeholder="Reposicion, conteo, ajuste..." required>
+                      </label>
+                    </div>
+                    <p class="admin-feedback" data-inventory-feedback></p>
+                    <button class="button button--add-to-cart button--checkout" type="submit">Registrar ajuste</button>
+                  </form>
+                </section>
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Ultimos movimientos</h3>
+                  </div>
+                  <div class="admin-stack-list" data-adjustments-list></div>
+                </section>
+              </div>
+              <section class="admin-panel-card">
+                <div class="admin-panel-card__header">
+                  <h3>Variantes y stock</h3>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>SKU</th>
+                        <th>Variante</th>
+                        <th>Stock</th>
+                        <th>Precio</th>
+                      </tr>
+                    </thead>
+                    <tbody data-inventory-table></tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-view="customers">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">CRM</p>
+                  <h2>Clientes</h2>
+                </div>
+              </div>
+              <section class="admin-panel-card">
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Telefono</th>
+                        <th>Rol</th>
+                        <th>Pedidos</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody data-customers-table></tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-view="coupons">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Promociones</p>
+                  <h2>Cupones</h2>
+                </div>
+                <button class="button button--add-to-cart" type="button" data-admin-new-coupon>Nuevo cupon</button>
+              </div>
+              <div class="admin-split-grid">
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Editor de cupon</h3>
+                  </div>
+                  <form class="coupon-form">
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Codigo</span>
+                        <input type="text" name="code" placeholder="BALGRIM10" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Tipo</span>
+                        <select name="discountType">
+                          <option value="percentage">Porcentaje</option>
+                          <option value="fixed">Valor fijo</option>
+                        </select>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Valor</span>
+                        <input type="number" name="discountValue" min="1" step="1" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Minimo de compra</span>
+                        <input type="number" name="minOrderAmount" min="0" step="1000">
+                      </label>
+                      <label class="checkout-field">
+                        <span>Limite de usos</span>
+                        <input type="number" name="usageLimit" min="1" step="1">
+                      </label>
+                      <label class="checkout-field">
+                        <span>Activo</span>
+                        <select name="active">
+                          <option value="true">Activo</option>
+                          <option value="false">Inactivo</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label class="checkout-field">
+                      <span>Descripcion</span>
+                      <textarea name="description" rows="3" placeholder="Texto interno o comercial"></textarea>
+                    </label>
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Inicio</span>
+                        <input type="datetime-local" name="startsAt">
+                      </label>
+                      <label class="checkout-field">
+                        <span>Fin</span>
+                        <input type="datetime-local" name="endsAt">
+                      </label>
+                    </div>
+                    <p class="admin-feedback" data-coupon-feedback></p>
+                    <button class="button button--add-to-cart button--checkout" type="submit">Guardar cupon</button>
+                  </form>
+                </section>
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Cupones activos</h3>
+                  </div>
+                  <div class="admin-stack-list" data-coupons-list></div>
+                </section>
+              </div>
+            </section>
+
+            <section class="admin-view" data-admin-view="content">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Visual merchandising</p>
+                  <h2>Contenido editorial</h2>
+                </div>
+                <button class="button button--add-to-cart" type="button" data-admin-new-content>Nuevo bloque</button>
+              </div>
+              <div class="admin-split-grid">
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Bloque editable</h3>
+                  </div>
+                  <form class="content-form">
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Key</span>
+                        <input type="text" name="key" placeholder="home-hero" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Titulo</span>
+                        <input type="text" name="title" placeholder="Titulo del bloque" required>
+                      </label>
+                      <label class="checkout-field">
+                        <span>Posicion</span>
+                        <input type="number" name="position" min="0" step="1" value="0">
+                      </label>
+                      <label class="checkout-field">
+                        <span>Activo</span>
+                        <select name="active">
+                          <option value="true">Activo</option>
+                          <option value="false">Oculto</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label class="checkout-field">
+                      <span>Body</span>
+                      <textarea name="body" rows="4" placeholder="Copy editorial o comercial"></textarea>
+                    </label>
+                    <div class="admin-form-grid admin-form-grid--double">
+                      <label class="checkout-field">
+                        <span>Subir imagen</span>
+                        <input type="file" name="contentImageFile" accept="image/*">
+                      </label>
+                      <label class="checkout-field">
+                        <span>Imagen</span>
+                        <input type="url" name="imageUrl" placeholder="https://...">
+                      </label>
+                      <label class="checkout-field">
+                        <span>CTA label</span>
+                        <input type="text" name="actionLabel" placeholder="Explorar coleccion">
+                      </label>
+                      <label class="checkout-field admin-field--full">
+                        <span>CTA href</span>
+                        <input type="text" name="actionHref" placeholder="/nuevos-lanzamientos.html">
+                      </label>
+                    </div>
+                    <div class="admin-image-preview-grid admin-image-preview-grid--single" data-content-image-preview></div>
+                    <p class="admin-feedback" data-content-feedback></p>
+                    <button class="button button--add-to-cart button--checkout" type="submit">Guardar bloque</button>
+                  </form>
+                </section>
+                <section class="admin-panel-card">
+                  <div class="admin-panel-card__header">
+                    <h3>Bloques activos</h3>
+                  </div>
+                  <div class="admin-stack-list" data-content-list></div>
+                </section>
+              </div>
+            </section>
+
+            <section class="admin-view" data-admin-view="settings">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Operacion base</p>
+                  <h2>Configuracion</h2>
+                </div>
+              </div>
+              <section class="admin-panel-card">
+                <form class="settings-form">
+                  <div class="admin-form-grid admin-form-grid--double">
+                    <label class="checkout-field">
+                      <span>Nombre de tienda</span>
+                      <input type="text" name="storeName" required>
+                    </label>
+                    <label class="checkout-field">
+                      <span>WhatsApp</span>
+                      <input type="text" name="whatsappNumber" required>
+                    </label>
+                    <label class="checkout-field">
+                      <span>Soporte email</span>
+                      <input type="email" name="supportEmail" placeholder="soporte@balgrim.co">
+                    </label>
+                    <label class="checkout-field">
+                      <span>Envio base</span>
+                      <input type="number" name="shippingFlatRate" min="0" step="1000">
+                    </label>
+                    <label class="checkout-field admin-field--full">
+                      <span>Envio gratis desde</span>
+                      <input type="number" name="freeShippingFrom" min="0" step="1000">
+                    </label>
+                  </div>
+                  <p class="admin-feedback" data-settings-feedback></p>
+                  <button class="button button--add-to-cart button--checkout" type="submit">Guardar configuracion</button>
+                </form>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-view="audit">
+              <div class="admin-view__header">
+                <div>
+                  <p class="admin-eyebrow">Trazabilidad</p>
+                  <h2>Auditoria</h2>
+                </div>
+              </div>
+              <section class="admin-panel-card">
+                <div class="admin-stack-list" data-audit-list></div>
+              </section>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="admin-lightbox" hidden data-admin-lightbox>
+    <button class="admin-lightbox__backdrop" type="button" data-lightbox-close aria-label="Cerrar vista ampliada"></button>
+    <div class="admin-lightbox__content">
+      <button class="admin-lightbox__close" type="button" data-lightbox-close aria-label="Cerrar">x</button>
+      <img src="" alt="Vista ampliada" data-lightbox-image>
+    </div>
+  </div>
+
+  <div class="admin-cropper" hidden data-admin-cropper>
+    <div class="admin-cropper__backdrop"></div>
+    <div class="admin-cropper__dialog">
+      <div class="admin-panel-card__header">
+        <h3>Recortar imagen</h3>
+        <button class="admin-lightbox__close" type="button" data-crop-cancel aria-label="Cerrar">x</button>
+      </div>
+      <div class="admin-cropper__stage" data-crop-stage>
+        <div class="admin-cropper__frame" data-crop-frame>
+          <img src="" alt="Imagen a recortar" data-crop-image>
+        </div>
+      </div>
+      <div class="admin-cropper__aspects">
+        <button class="admin-cropper__aspect is-active" type="button" data-crop-aspect="1">1:1</button>
+        <button class="admin-cropper__aspect" type="button" data-crop-aspect="0.8">4:5</button>
+        <button class="admin-cropper__aspect" type="button" data-crop-aspect="1.7777777778">16:9</button>
+      </div>
+      <div class="admin-cropper__controls">
+        <label class="checkout-field">
+          <span>Zoom</span>
+          <input type="range" min="100" max="220" step="1" value="100" data-crop-zoom>
+        </label>
+        <label class="checkout-field">
+          <span>Horizontal</span>
+          <input type="range" min="0" max="100" step="1" value="50" data-crop-x>
+        </label>
+        <label class="checkout-field">
+          <span>Vertical</span>
+          <input type="range" min="0" max="100" step="1" value="50" data-crop-y>
+        </label>
+      </div>
+      <div class="admin-inline-actions">
+        <button class="button button--add-to-cart" type="button" data-crop-skip>Usar original</button>
+        <button class="button button--add-to-cart button--checkout" type="button" data-crop-apply>Aplicar recorte</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="store.js"></script>
+  <script defer src="admin.js"></script>
+</body>
+</html>
