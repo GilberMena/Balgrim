@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | Balgrim</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="checkout-layout">
+  <div class="subpage-shell">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Balgrim inicio">BALGRIM</a>
+      <nav class="nav">
+        <a href="nuevos-lanzamientos.html">Nuevos lanzamientos</a>
+        <a href="hombre.html">Hombre</a>
+        <a href="mujer.html">Mujer</a>
+        <a href="accesorios.html">Accesorios</a>
+      </nav>
+      <div class="toolbar" aria-label="Acciones de cuenta">
+        <a class="icon-button" href="/" aria-label="Buscar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16L21 21"></path></svg>
+        </a>
+        <a class="icon-button" href="admin.html" aria-label="Admin">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20C5.8 16.8 8.5 15 12 15C15.5 15 18.2 16.8 19 20"></path></svg>
+        </a>
+        <a class="icon-button icon-button--cart" href="#carrito" aria-label="Carrito">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7H17L16 20H8L7 7Z"></path><path d="M9 7C9 4.8 10.4 3.5 12 3.5C13.6 3.5 15 4.8 15 7"></path></svg>
+          <span class="cart-badge">0</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="subpage-main product-page-main">
+      <div data-checkout-page-root></div>
+    </main>
+
+    <footer class="footer"></footer>
+  </div>
+  <script defer src="store.js"></script>
+  <script defer src="app.js"></script>
+</body>
+</html>

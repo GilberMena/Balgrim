@@ -161,6 +161,61 @@ const getWhatsappUrl = (customer, orderId) => {
   )}`;
 };
 
+const getWhatsappSupportUrl = (message = `Hola, quiero mas informacion sobre ${settings.storeName}.`) =>
+  `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+const footerTemplate = () => `
+  <div class="footer__columns">
+    <div class="footer-column">
+      <span class="footer-title">Balgrim</span>
+      <a href="index.html">Brand</a>
+      <a href="nuevos-lanzamientos.html">Colecciones</a>
+      <a href="/">Nuestras tiendas</a>
+      <a href="/">Formulario PQRS</a>
+    </div>
+    <div class="footer-column">
+      <span class="footer-title">Information</span>
+      <a href="/">Politicas de cambios y devoluciones</a>
+      <a href="/">Politicas de envios</a>
+      <a href="/">Politicas de privacidad</a>
+      <a href="/">Terminos y condiciones</a>
+    </div>
+  </div>
+  <div class="footer__visual" aria-hidden="true">
+    <div class="footer__glow"></div>
+    <div class="footer__figure footer__figure--left"></div>
+    <div class="footer__figure footer__figure--right"></div>
+  </div>
+  <div class="footer__signature">
+    <div class="socials" aria-label="Redes sociales">
+      <a class="social-icon" href="/" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect>
+          <circle cx="12" cy="12" r="4.2"></circle>
+          <circle cx="17.3" cy="6.8" r="0.9" fill="currentColor" stroke="none"></circle>
+        </svg>
+      </a>
+      <a class="social-icon" href="/" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.2 7.4C20 6.6 19.4 6 18.6 5.8C17.2 5.4 12 5.4 12 5.4C12 5.4 6.8 5.4 5.4 5.8C4.6 6 4 6.6 3.8 7.4C3.4 8.8 3.4 12 3.4 12C3.4 12 3.4 15.2 3.8 16.6C4 17.4 4.6 18 5.4 18.2C6.8 18.6 12 18.6 12 18.6C12 18.6 17.2 18.6 18.6 18.2C19.4 18 20 17.4 20.2 16.6C20.6 15.2 20.6 12 20.6 12C20.6 12 20.6 8.8 20.2 7.4Z"></path>
+          <path d="M10 15.2V8.8L15.4 12L10 15.2Z" fill="none" stroke="currentColor"></path>
+        </svg>
+      </a>
+      <a class="social-icon" href="/" aria-label="TikTok">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4V13.4C14 15.2 12.7 16.5 10.9 16.5C9.4 16.5 8.2 15.3 8.2 13.8C8.2 12.2 9.5 11 11.1 11C11.5 11 11.9 11.1 12.2 11.2V8.1C11.8 8 11.4 8 11 8C7.8 8 5.2 10.6 5.2 13.8C5.2 17 7.8 19.6 11 19.6C14.2 19.6 16.8 17 16.8 13.8V9.4C17.9 10.2 19.2 10.7 20.6 10.8V7.7C18.2 7.5 16.1 6 15.3 4H14Z"></path>
+        </svg>
+      </a>
+      <a class="social-icon" href="/" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13.5 20V12.6H16L16.4 9.8H13.5V8C13.5 7.1 14 6.4 15.4 6.4H16.5V4C15.9 3.9 15.3 3.8 14.7 3.8C11.9 3.8 10.2 5.4 10.2 8.5V9.8H8V12.6H10.2V20"></path>
+        </svg>
+      </a>
+    </div>
+    <div class="footer-logo footer-logo--hero">BALGRIM</div>
+  </div>
+`;
+
 const drawerMarkup = `
   <div class="cart-overlay" hidden></div>
   <aside class="cart-drawer" aria-hidden="true" aria-label="Carrito de compras">
@@ -198,6 +253,7 @@ const drawerMarkup = `
           </label>
           <p class="checkout-error" hidden></p>
           <div class="checkout-actions">
+            <a class="button button--ghost button--checkout-link" href="checkout.html">Ir al checkout</a>
             <button class="button button--add-to-cart cart-clear" type="button">Vaciar carrito</button>
             <button class="button button--add-to-cart button--checkout" type="submit">Pedir por WhatsApp</button>
           </div>
@@ -241,6 +297,35 @@ const ensureCartUi = () => {
   if (!document.querySelector(".cart-drawer") || !document.querySelector(".product-modal")) {
     document.body.insertAdjacentHTML("beforeend", drawerMarkup);
   }
+};
+
+const ensureFloatingWhatsapp = () => {
+  const existing = document.querySelector(".floating-whatsapp");
+  if (existing) {
+    existing.setAttribute("href", getWhatsappSupportUrl());
+    return;
+  }
+
+  document.body.insertAdjacentHTML(
+    "beforeend",
+    `
+      <a class="floating-whatsapp" href="${getWhatsappSupportUrl()}" target="_blank" rel="noopener" aria-label="Hablar por WhatsApp">
+        <span class="floating-whatsapp__label">WhatsApp</span>
+        <span class="floating-whatsapp__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12.1 3.6C7.5 3.6 3.8 7.3 3.8 11.9C3.8 13.4 4.2 14.8 5 16L3.9 20.1L8.1 19C9.3 19.7 10.6 20 12.1 20C16.7 20 20.4 16.3 20.4 11.8C20.4 7.3 16.7 3.6 12.1 3.6Z"></path>
+            <path d="M9.3 8.7C9.1 8.2 8.9 8.2 8.7 8.2H8.2C8 8.2 7.7 8.3 7.5 8.6C7.3 8.8 6.7 9.4 6.7 10.6C6.7 11.8 7.5 13 7.6 13.2C7.8 13.3 9.2 15.6 11.4 16.5C13.3 17.2 13.7 17.1 14.2 17C14.7 16.9 15.7 16.3 15.9 15.8C16.1 15.3 16.1 14.9 16 14.8C16 14.6 15.7 14.5 15.2 14.3C14.8 14.1 14.2 13.8 13.8 13.7C13.5 13.6 13.2 13.5 12.9 13.9C12.6 14.3 12.1 14.8 11.9 15C11.7 15.1 11.5 15.2 11.1 15C10.8 14.8 9.9 14.5 9 13.6C8.4 13 8 12.2 7.9 11.9C7.8 11.6 7.9 11.4 8.1 11.2C8.3 11 8.4 10.8 8.6 10.5C8.7 10.2 8.8 10 8.9 9.7C9 9.4 9 9.1 8.8 8.9L9.3 8.7Z"></path>
+          </svg>
+        </span>
+      </a>
+    `
+  );
+};
+
+const renderSiteFooter = () => {
+  document.querySelectorAll(".footer").forEach((footer) => {
+    footer.innerHTML = footerTemplate();
+  });
 };
 
 const updateBadges = () => {
@@ -714,6 +799,105 @@ const renderProductPage = async () => {
     }
   };
 };
+
+const renderCheckoutPage = () => {
+  const root = document.querySelector("[data-checkout-page-root]");
+  if (!root) return;
+
+  const cartItems = cart
+    .map((item) => {
+      const product = getProduct(item.id);
+      const variant = getCartVariant(item);
+      if (!product || !variant) return null;
+      return {
+        product,
+        variant,
+        quantity: item.quantity,
+        total: variant.price * item.quantity,
+        image: variant.imageUrl || getProductImage(product),
+      };
+    })
+    .filter(Boolean);
+
+  const cartIssues = getCartIssues();
+
+  root.innerHTML = `
+    <section class="checkout-page">
+      <div class="checkout-page__head">
+        <div>
+          <p class="product-page__eyebrow">Checkout</p>
+          <h1>Finaliza tu pedido</h1>
+          <p class="checkout-page__intro">Completa tus datos, revisa el resumen y deja el pedido listo para cierre manual o paso a pago.</p>
+        </div>
+        <a class="button button--ghost" href="nuevos-lanzamientos.html">Seguir comprando</a>
+      </div>
+      <div class="checkout-page__grid">
+        <section class="checkout-page__panel">
+          <div class="cart-summary cart-summary--page">
+            <div class="cart-summary__row">
+              <span>Subtotal</span>
+              <strong>${formatCurrency(getCartTotal())}</strong>
+            </div>
+            ${cartIssues.length ? `<p class="checkout-error">Ajusta las variantes agotadas o cantidades fuera de stock para continuar.</p>` : `<p class="cart-summary__note">Tu pedido queda listo para validacion, pago y confirmacion por WhatsApp.</p>`}
+            <form class="checkout-form checkout-form--page" novalidate>
+              <label class="checkout-field">
+                <span>Nombre completo</span>
+                <input type="text" name="name" placeholder="Tu nombre" required>
+              </label>
+              <label class="checkout-field">
+                <span>Celular</span>
+                <input type="tel" name="phone" placeholder="300 000 0000" required>
+              </label>
+              <label class="checkout-field">
+                <span>Direccion</span>
+                <textarea name="address" rows="3" placeholder="Barrio, direccion y referencias" required></textarea>
+              </label>
+              <label class="checkout-field">
+                <span>Notas adicionales</span>
+                <textarea name="notes" rows="2" placeholder="Opcional"></textarea>
+              </label>
+              <p class="checkout-error" hidden></p>
+              <div class="checkout-actions checkout-actions--page">
+                <button class="button button--ghost" type="button" data-checkout-back-cart>Volver al carrito</button>
+                <button class="button button--add-to-cart button--checkout" type="submit" ${cartIssues.length || !cartItems.length ? "disabled" : ""}>Pedir por WhatsApp</button>
+              </div>
+            </form>
+          </div>
+        </section>
+        <aside class="checkout-page__panel checkout-page__panel--summary">
+          <div class="checkout-page__summary-head">
+            <p class="product-page__eyebrow">Resumen</p>
+            <strong>${cartItems.length} item${cartItems.length === 1 ? "" : "s"}</strong>
+          </div>
+          <div class="checkout-page__items">
+            ${cartItems.length ? cartItems.map(({ product, variant, quantity, total, image }) => `
+              <article class="checkout-item${!isVariantInStock(variant) || quantity > variant.stock ? " is-warning" : ""}">
+                <div class="checkout-item__media${image ? " has-image" : ""}">
+                  ${image ? `<img src="${image}" alt="${product.name}">` : product.name.charAt(0)}
+                </div>
+                <div class="checkout-item__copy">
+                  <h3>${product.name}</h3>
+                  <p>${getVariantLabel(variant)}</p>
+                  <span>${quantity} x ${formatCurrency(variant.price)}</span>
+                </div>
+                <div class="checkout-item__meta">
+                  <strong>${formatCurrency(total)}</strong>
+                  <small>${getVariantStockMessage(variant)}</small>
+                </div>
+              </article>
+            `).join("") : `<div class="checkout-empty"><p>Tu carrito esta vacio.</p><a class="button button--add-to-cart" href="nuevos-lanzamientos.html">Explorar catalogo</a></div>`}
+          </div>
+        </aside>
+      </div>
+    </section>
+  `;
+
+  root.onclick = (event) => {
+    if (event.target.closest("[data-checkout-back-cart]")) {
+      window.location.href = "index.html#carrito";
+    }
+  };
+};
 const renderEditorialBlocks = () => {
   const main = document.querySelector("main");
   if (!main) return;
@@ -1142,14 +1326,18 @@ const bindEvents = () => {
 
 const init = async () => {
   ensureCartUi();
+  ensureFloatingWhatsapp();
   catalog = await loadCatalogFromSource();
   contentBlocks = await loadContentBlocksFromSource();
   settings = await loadSettingsFromSource();
+  ensureFloatingWhatsapp();
   cart = loadCart();
   normalizeCartItems();
+  renderSiteFooter();
   renderEditorialBlocks();
   renderDynamicProductGrids();
   await renderProductPage();
+  renderCheckoutPage();
   enhanceProductCards();
   updateBadges();
   renderCart();
